@@ -28,7 +28,7 @@ def dfCleaner(df):
     """
 
     # Remove unwanted columns
-    keepers = ["Institution", "Location", "Join", "City", "State", "Left"]
+    keepers = ["Institution", "Location", "Join", "City", "State", "Left", "Joined"]
     columns = df.columns
     if type(columns) == pd.core.indexes.multi.MultiIndex:
         columns = list(columns.get_level_values(0))
@@ -58,17 +58,26 @@ def dfCleaner(df):
     if type(df.columns) == pd.core.indexes.multi.MultiIndex:
         df.columns = [' '.join(col).strip() for col in df.columns.values]
 
-    # Check for Left column and add it if it doesn't exist
-    if 'Left' not in df.columns:
-        df['Left'] = np.nan
+    # Check for 'Left' in any column and add it if it doesn't exist
+    if not any('Left' in col for col in df.columns):
+        df['Left'] = np.NaN
+
+    # Add Football and Basketball columns with default value of True
+    if 'Football' not in df.columns:
+        df['Football'] = True
+    if 'Basketball' not in df.columns:
+        df['Basketball'] = True
     
     # Rename columns
-    newColumnNames = ["Institution", "Location", "Joined", "Left"]
+    newColumnNames = ["Institution", "Location", "Joined", "Left", "Football", "Basketball"]
     df.columns = newColumnNames
 
     # Remove unwanted characters
     df['Joined'] = df['Joined'].astype(str).str.slice(0, 4)
     df['Left'] = df['Left'].astype(str).str.slice(0, 4)
+
+    # Change Left column NaN values to False
+    df['Left'] = df['Left'].replace('nan', False)
 
     # Remove duplicate rows
     df.drop_duplicates(inplace=True)
@@ -85,7 +94,6 @@ def cleanDataFrames(dfs):
     cleanedDFs = []
     for df in dfs:
         cleanedDFs.append(dfCleaner(df))
-        print(f"Cleaned {df}")
     return cleanedDFs
 
 # Need to add Football and Basketball data to the dataframe in form of Boolean values
@@ -101,4 +109,3 @@ def combineDataFrames(dfs):
 dfs = getDataFrames(0, 4, url)
 cleanedDFs = cleanDataFrames(dfs) 
 combinedDF = combineDataFrames(cleanedDFs)
-print(combinedDF)

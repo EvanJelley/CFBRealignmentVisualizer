@@ -5,8 +5,6 @@ import pandas as pd
 import io
 import numpy as np
 
-url = "https://en.wikipedia.org/wiki/Big_Ten_Conference"
-
 def getDataFrames(firstTable, lastTable, URL):
     """
     This function takes a URL and returns a list of dataframes containing the tables from the Wikipedia page. The firstTable and lastTable parameters are used to specify which tables to scrape.
@@ -62,6 +60,15 @@ def dfCleaner(df):
     if not any('Left' in col for col in df.columns):
         df['Left'] = np.NaN
 
+    # Check if 'City' and 'State' columns exist
+    if 'City' in df.columns and 'State' in df.columns:
+        # Merge 'City' and 'State' columns
+        df['Location'] = df['City'] + ', ' + df['State']
+        # Drop 'City' and 'State' columns
+        df.drop(['City', 'State'], axis=1, inplace=True)
+        # Reorder columns
+        df = df.loc[:,['Institution', 'Location', 'Joined', 'Left']]
+
     # Add Football and Basketball columns with default value of True
     if 'Football' not in df.columns:
         df['Football'] = True
@@ -85,6 +92,9 @@ def dfCleaner(df):
     # Reset index
     df.reset_index(drop=True, inplace=True)
 
+    # Final scrub for bracketed text
+    df = df.replace(to_replace=r'\[[^\]]*\]', value='', regex=True)
+
     return df
 
 def cleanDataFrames(dfs):
@@ -106,6 +116,3 @@ def combineDataFrames(dfs):
     combinedDF.reset_index(drop=True, inplace=True)
     return combinedDF
 
-dfs = getDataFrames(0, 4, url)
-cleanedDFs = cleanDataFrames(dfs) 
-combinedDF = combineDataFrames(cleanedDFs)

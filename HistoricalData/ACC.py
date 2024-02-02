@@ -2,17 +2,20 @@
 
 import wikiScrape as scrape
 import pandas as pd
+import numpy as np
 
 # Define the URL
-URL = "https://en.wikipedia.org/wiki/Big_Ten_Conference"
+URL = "https://en.wikipedia.org/wiki/Atlantic_Coast_Conference"
 
 # Pull and clean dataframes
-dfs = scrape.getDataFrames(0, 2, URL)
-dfs += scrape.getDataFrames(3, 4, URL)
+dfs = scrape.getDataFrames(0, 3, URL)
 cleanedDFs = scrape.cleanDataFrames(dfs)
 
 combinedDFs = scrape.combineDataFrames(cleanedDFs)
 
-combinedDFs.to_csv("HistoricalData/BigTen.csv", index=False)
+# Change the value in the 'Football' column of the 11th row (Notre Dame) to False
+combinedDFs.loc[11, 'Football'] = False
+
+combinedDFs.to_csv("ACC.csv", index=False)
 
 print(combinedDFs)

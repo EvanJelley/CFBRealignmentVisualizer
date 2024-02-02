@@ -1,0 +1,37 @@
+Institution,Location,Joined,Left,Football,Basketball
+Florida International University,"Miami, Florida",2013,False,True,True
+Jacksonville State University,"Jacksonville, Alabama",2023,False,True,True
+Liberty University,"Lynchburg, Virginia",2023,False,True,True
+Louisiana Tech University,"Ruston, Louisiana",2013,False,True,True
+Middle Tennessee State University,"Murfreesboro, Tennessee",2013,False,True,True
+New Mexico State University,"Las Cruces, New Mexico",2023,False,True,True
+Sam Houston State University,"Huntsville, Texas",2023,False,True,True
+University of Texas at El Paso,"El Paso, Texas",2005,False,True,True
+Western Kentucky University,"Bowling Green, Kentucky",2014,False,True,True
+Kennesaw State University,"Kennesaw, Georgia",2024,False,True,True
+University of Delaware,"Newark, Delaware",2025,False,True,True
+University of Alabama at Birmingham,"Birmingham, Alabama",1995,2023,True,True
+University of Central Florida,"Orlando, Florida",2005,2013,True,True
+University of Cincinnati,"Cincinnati, Ohio",1995,2005,True,True
+DePaul University,"Chicago, Illinois",1995,2005,True,True
+East Carolina University,"Greenville, North Carolina",2001,2014,True,True
+Florida Atlantic University,"Boca Raton, Florida",2013,2023,True,True
+University of Houston,"Houston, Texas",1996,2013,True,True
+University of Louisville,"Louisville, Kentucky",1995,2005,True,True
+Marquette University,"Milwaukee, Wisconsin",1995,2005,True,True
+Marshall University,"Huntington, West Virginia",2005,2022,True,True
+University of Memphis,"Memphis, Tennessee",1995,2013,True,True
+University of North Carolina at Charlotte,"Charlotte, North Carolina",1995,2005,True,True
+University of North Carolina at Charlotte,"Charlotte, North Carolina",2013,2023,True,True
+University of North Texas,"Denton, Texas",2013,2023,True,True
+Old Dominion University,"Norfolk, Virginia",2013,2022,True,True
+Rice University,"Houston, Texas",2005,2023,True,True
+Saint Louis University,"St. Louis, Missouri",1995,2005,True,True
+University of South Florida,"Tampa, Florida",1995,2005,True,True
+Southern Methodist University,"Dallas, Texas",2005,2013,True,True
+University of Southern Mississippi,"Hattiesburg, Mississippi",1995,2022,True,True
+Texas Christian University,"Fort Worth, Texas",2001,2005,True,True
+University of Texas at San Antonio,"San Antonio, Texas",2013,2023,True,True
+Tulane University,"New Orleans, Louisiana",1995,2014,True,True
+University of Tulsa,"Tulsa, Oklahoma",2005,2014,True,True
+United States Military Academy (Army),"West Point, New York",1998,2005,True,False

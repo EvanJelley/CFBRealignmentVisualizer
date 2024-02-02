@@ -2,9 +2,10 @@
 
 import wikiScrape as scrape
 import pandas as pd
+import numpy as np
 
 # Define the URL
-URL = "https://en.wikipedia.org/wiki/Big_Ten_Conference"
+URL = "https://en.wikipedia.org/wiki/Big_12_Conference"
 
 # Pull and clean dataframes
 dfs = scrape.getDataFrames(0, 2, URL)
@@ -13,6 +14,6 @@ cleanedDFs = scrape.cleanDataFrames(dfs)
 
 combinedDFs = scrape.combineDataFrames(cleanedDFs)
 
-combinedDFs.to_csv("HistoricalData/BigTen.csv", index=False)
+combinedDFs.to_csv("HistoricalData/Big12.csv", index=False)
 
 print(combinedDFs)

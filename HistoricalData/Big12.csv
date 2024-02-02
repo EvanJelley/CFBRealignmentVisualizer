@@ -1,0 +1,23 @@
+Institution,Location,Joined,Left,Football,Basketball
+Baylor University,"Waco, Texas",1996,False,True,True
+Brigham Young University,"Provo, Utah",2023,False,True,True
+University of Central Florida,"Orlando, Florida",2023,False,True,True
+University of Cincinnati,"Cincinnati, Ohio",2023,False,True,True
+University of Houston,"Houston, Texas",2023,False,True,True
+Iowa State University,"Ames, Iowa",1996,False,True,True
+University of Kansas,"Lawrence, Kansas",1996,False,True,True
+Kansas State University,"Manhattan, Kansas",1996,False,True,True
+University of Oklahoma ,"Norman, Oklahoma",1996,False,True,True
+Oklahoma State University,"Stillwater, Oklahoma",1996,False,True,True
+University of Texas at Austin ,"Austin, Texas",1996,False,True,True
+Texas Christian University,"Fort Worth, Texas",2012,False,True,True
+Texas Tech University,"Lubbock, Texas",1996,False,True,True
+West Virginia University,"Morgantown, West Virginia",2012,False,True,True
+University of Arizona,"Tucson, Arizona",2024,False,True,True
+Arizona State University,"Tempe , Arizona",2024,False,True,True
+University of Colorado Boulder,"Boulder, Colorado",2024,False,True,True
+University of Utah,"Salt Lake City, Utah",2024,False,True,True
+University of Colorado Boulder,"Boulder, CO",1996,2011,True,True
+University of Missouri,"Columbia, MO",1996,2012,True,True
+University of Nebraska–Lincoln,"Lincoln, NE",1996,2011,True,True
+Texas A&M University,"College Station, TX",1996,2012,True,True

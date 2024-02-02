@@ -1,0 +1,20 @@
+Institution,Location,Joined,Left,Football,Basketball
+Indiana University Bloomington,"Bloomington, Indiana",1899,False,True,True
+"University of Maryland, College Park","College Park, Maryland",2014,False,True,True
+University of Michigan,"Ann Arbor, Michigan",1896,False,True,True
+Michigan State University,"East Lansing, Michigan",1950,False,True,True
+Ohio State University,"Columbus, Ohio",1912,False,True,True
+Pennsylvania State University,"University Park, Pennsylvania",1990,False,True,True
+Rutgers University–New Brunswick,"New Brunswick–Piscataway, New Jersey",2014,False,True,True
+University of Illinois Urbana–Champaign,"Urbana-Champaign, Illinois",1896,False,True,True
+University of Iowa,"Iowa City, Iowa",1899,False,True,True
+"University of Minnesota, Twin Cities","Minneapolis-St. Paul, Minnesota",1896,False,True,True
+University of Nebraska–Lincoln,"Lincoln, Nebraska",2011,False,True,True
+Northwestern University,"Evanston, Illinois",1896,False,True,True
+Purdue University,"West Lafayette, Indiana",1896,False,True,True
+University of Wisconsin–Madison,"Madison, Wisconsin",1896,False,True,True
+"University of California, Los Angeles (UCLA)","Los Angeles, California",2024,False,True,True
+University of Oregon,"Eugene, Oregon",2024,False,True,True
+University of Southern California (USC),"Los Angeles, California",2024,False,True,True
+University of Washington,"Seattle, Washington",2024,False,True,True
+University of Chicago,"Chicago, Illinois",1896,1946,True,True

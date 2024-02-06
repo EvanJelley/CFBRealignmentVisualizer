@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup as bs
 import pandas as pd
 import os
+import numpy as np
 
 def getCoordinates(city, state):
     """
@@ -47,4 +48,14 @@ def updateCSVs():
             print("Processing " + file + "...")
             addCoordinatesToCSV(file)
 
-updateCSVs()
+
+# Correct "Left" column for csvs by replacing False with NaN
+def correctLeftColumn():
+    for file in os.listdir("ConferenceCSVs"):
+        if file.endswith(".csv"):
+            df = pd.read_csv("ConferenceCSVs/" + file)
+            df["Left"] = df["Left"].replace("False", np.nan) 
+            df.to_csv("ConferenceCSVs/" + file, index=False)
+
+correctLeftColumn()
+

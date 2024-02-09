@@ -13,6 +13,12 @@ class school(object):
         self.latitude = latitude
         self.longitude = longitude
 
+    def getLatitude(self):
+        return self.latitude
+    
+    def getLongitude(self):
+        return self.longitude
+
     def __str__(self):
         return self.name
     
@@ -22,9 +28,19 @@ class conference(object):
         self.name = name
         self.year = year
         self.schools = []
+        self.geoCenter = None
     
     def addSchool(self, school):
         self.schools.append(school)
+    
+    def calculateGeoCenter(self):
+        latitudes = []
+        longitudes = []
+        for school in self.schools:
+            latitudes.append(school.getLatitude()) # NEEDS WORK
+            longitudes.append(school.getLongitude()) # NEEDS WORK
+        return latitudes, longitudes
+        ##### Use Method A & B from this site: http://www.geomidpoint.com/calculation.html to calculate the center of the conference from #####
 
 def coordinateCleaner(coordinate):
     lat = coordinate.split(",")[0].strip()
@@ -99,9 +115,6 @@ def great_circle_distance (latitudeA, longitudeA, latitudeB, longitudeB):
     return R * central_angle
 
 
-
-
-
 def readInSchools(conf):
     eras = []
 
@@ -147,15 +160,7 @@ con = "BigTen"
 eras = readInSchools(con)
 for era in eras:
     print(era.name)
-    for school in era.schools:
-        print(school.name)
-        print(school.location)
-        print(school.football)
-        print(school.basketball)
-        print(school.latitude)
-        print(school.longitude)
-        print("\n")
-
+    print(era.calculateGeoCenter())
 
 
 

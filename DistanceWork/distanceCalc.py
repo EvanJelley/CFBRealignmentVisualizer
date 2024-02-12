@@ -34,12 +34,47 @@ class conference(object):
         self.schools.append(school)
     
     def calculateGeoCenter(self):
-        latitudes = []
-        longitudes = []
+
+        # Calculate initial center
+        x = []
+        y = []
+        z = []
+        schoolLocations = []
         for school in self.schools:
-            latitudes.append(school.getLatitude()) # NEEDS WORK
-            longitudes.append(school.getLongitude()) # NEEDS WORK
-        return latitudes, longitudes
+            latitude = math.radians(school.getLatitude())
+            longitude = math.radians(school.getLongitude())
+            schoolLocations.append((latitude, longitude))
+            x.append(math.cos(latitude) * math.cos(longitude))
+            y.append(math.cos(latitude) * math.sin(longitude))
+            z.append(math.sin(latitude))
+        x = sum(x) / len(x)
+        y = sum(y) / len(y)
+        z = sum(z) / len(z)
+        centralLongitude = math.atan2(y, x)
+        centralSquareRoot = math.sqrt(x * x + y * y)
+        centralLatitude = math.atan2(z, centralSquareRoot)
+        centralLatitude = math.degrees(centralLatitude)
+        centralLongitude = math.degrees(centralLongitude)
+
+        # Iterate to find better center
+        currentPoint = (centralLatitude, centralLongitude)
+        distance = distanceCalc(currentPoint, schoolLocations)
+
+        # Test school locations
+        for school in schoolLocations:
+            testDistance = distanceCalc(school, schoolLocations)
+            if testDistance < distance:
+                currentPoint = school
+                distance = testDistance
+        
+        testDistance = math.pi/2
+
+        #### LEFT OFF HERE (step 5 of the method) ####
+
+
+            
+                   
+
         ##### Use Method A & B from this site: http://www.geomidpoint.com/calculation.html to calculate the center of the conference from #####
 
 def coordinateCleaner(coordinate):
@@ -55,17 +90,16 @@ def coordinateCleaner(coordinate):
         lon[i] = int(lon[i])
     return lat, lon
 
-def convertDegreesMinutesSecondsToDecimal(degrees, minutes, seconds, direction):
+def convertDegreesMinutesSecondsToDecimal(coordinates):
+    if len(coordinates) == 3:
+        degrees, minutes, direction = coordinates
+        seconds = 0
+    else:
+        degrees, minutes, seconds, direction = coordinates
     if direction == 'N' or direction == 'E':
         return degrees + minutes / 60.0 + seconds / 3600.0
     else:
         return -1 * (degrees + minutes / 60.0 + seconds / 3600.0)
-
-lat = (42, 16, 53,"N")
-lon = (83, 44, 54, "W")
-
-latDecimal = convertDegreesMinutesSecondsToDecimal(lat[0], lat[1], lat[2], lat[3])
-lonDecimal = convertDegreesMinutesSecondsToDecimal(lon[0], lon[1], lon[2], lon[3])
 
 def convertDecimalToDegreesMinutesSeconds (decimal):
     degrees = int(decimal)
@@ -73,47 +107,27 @@ def convertDecimalToDegreesMinutesSeconds (decimal):
     seconds = int((decimal - degrees - minutes / 60.0) * 3600)
     return degrees, minutes, seconds
 
-def great_circle_distance (latitudeA, longitudeA, latitudeB, longitudeB):
-    # Degrees to radians
-    phi1    = math.radians(latitudeA)
-    lambda1 = math.radians(longitudeA)
+def pointToPointCalc(lat1, lon1, lat2, lon2):
+    """
+    Calculate the distance between two points on the earth's surface
+    :params lat1, lat2, lon1, lon2: latitude and longitude of the two points (should be in radians)
+    :return: distance between the two points (in radians)
+    """
+    R = 6371.009 # radius of the earth in kilometers
+    distance = math.acos(math.sin(lat1) * math.sin(lat2) + math.cos(lat1) * math.cos(lat2) * math.cos(lon1 - lon2)) * R
+    return distance
 
-    phi2    = math.radians(latitudeB)
-    lambda2 = math.radians(longitudeB)
-
-    delta_lambda = math.fabs(lambda2 - lambda1)
-
-    central_angle = \
-        math.atan2 \
-        (
-            # Numerator
-            math.sqrt
-            (
-                # First
-                math.pow
-                (
-                    math.cos(phi2) * math.sin(delta_lambda)
-                    , 2.0
-                )
-                +
-                # Second
-                math.pow
-                (
-                    math.cos(phi1) * math.sin(phi2) -
-                    math.sin(phi1) * math.cos(phi2) * math.cos(delta_lambda)
-                    , 2.0
-                )
-            ),
-            # Denominator
-            (
-                math.sin (phi1) * math.sin(phi2) +
-                math.cos (phi1) * math.cos(phi2) * math.cos(delta_lambda)
-            )
-        )
-
-    R = 3958.7564 # miles
-    return R * central_angle
-
+def distanceCalc(main, points):
+    """
+    Calculate the distance between a point and a set of points
+    :params main: a tuple with the latitude and longitude of the main point
+    :params points: a list of tuples with the latitude and longitude of the set of points
+    :return: the total distance between the main point and the set of points
+    """
+    distance = 0
+    for point in points:
+        distance += pointToPointCalc(main[0], main[1], point[0], point[1])
+    return distance
 
 def readInSchools(conf):
     eras = []
@@ -148,6 +162,9 @@ def readInSchools(conf):
                     basketball = False
                 coordinates = row[4]
                 latitude, longitude = coordinateCleaner(coordinates)
+                print(name)
+                latitude = convertDegreesMinutesSecondsToDecimal(latitude)
+                longitude = convertDegreesMinutesSecondsToDecimal(longitude)
                 schoolObj = school(name, location, football, basketball, latitude, longitude)
                 confEra.addSchool(schoolObj)
             conn.close()
@@ -156,7 +173,7 @@ def readInSchools(conf):
             eras.append(confEra)
     return eras
 
-con = "BigTen"
+con = "SEC"
 eras = readInSchools(con)
 for era in eras:
     print(era.name)

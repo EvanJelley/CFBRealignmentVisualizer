@@ -41,6 +41,7 @@ class conference(object):
         z = []
         schoolLocations = []
         for school in self.schools:
+            # print(school.getLatitude(), school.getLongitude())
             latitude = math.radians(school.getLatitude())
             longitude = math.radians(school.getLongitude())
             schoolLocations.append((latitude, longitude))
@@ -53,21 +54,38 @@ class conference(object):
         centralLongitude = math.atan2(y, x)
         centralSquareRoot = math.sqrt(x * x + y * y)
         centralLatitude = math.atan2(z, centralSquareRoot)
-        centralLatitude = math.degrees(centralLatitude)
-        centralLongitude = math.degrees(centralLongitude)
 
         # Iterate to find better center
         currentPoint = (centralLatitude, centralLongitude)
-        distance = distanceCalc(currentPoint, schoolLocations)
+        totDistance = distanceCalc(currentPoint, schoolLocations)
 
         # Test school locations
         for school in schoolLocations:
-            testDistance = distanceCalc(school, schoolLocations)
-            if testDistance < distance:
+            schoolDistance = distanceCalc(school, schoolLocations)
+            # print("Current distance: " + str(distance))
+            # print("Test distance: " + str(testDistance))
+            if schoolDistance < totDistance:
                 currentPoint = school
-                distance = testDistance
+                totDistance = schoolDistance
+                # print("New center: " + str(currentPoint) + " with distance: " + str(distance) + "\n")
         
-        testDistance = math.pi/2
+        testDistance = 10018 / 6371.0
+        while testDistance > 0.000000002:
+            # print(currentPoint[0], currentPoint[1])
+            testPoints = generate_test_points(currentPoint[0], currentPoint[1], testDistance)
+            newPointFlag = False
+            for point in testPoints:
+                testPointDistance = distanceCalc(point, schoolLocations)
+                if testPointDistance < totDistance:
+                    currentPoint = point
+                    totDistance = testPointDistance
+                    newPointFlag = True
+                    # print("New center from Narrowing method: " + str(currentPoint) + " with distance: " + str(distance) + "\n")
+            if not newPointFlag:
+                testDistance = testDistance / 2
+        currentPoint = (math.degrees(currentPoint[0]), math.degrees(currentPoint[1]))
+        return currentPoint
+
 
         #### LEFT OFF HERE (step 5 of the method) ####
 
@@ -114,6 +132,8 @@ def pointToPointCalc(lat1, lon1, lat2, lon2):
     :return: distance between the two points (in radians)
     """
     R = 6371.009 # radius of the earth in kilometers
+    if abs(lat1 - lat2) < .000000000000001 and abs(lon1 - lon2) < .000000000000001:
+        return 0
     distance = math.acos(math.sin(lat1) * math.sin(lat2) + math.cos(lat1) * math.cos(lat2) * math.cos(lon1 - lon2)) * R
     return distance
 
@@ -128,6 +148,29 @@ def distanceCalc(main, points):
     for point in points:
         distance += pointToPointCalc(main[0], main[1], point[0], point[1])
     return distance
+
+def generate_test_points(lat, lon, distance):
+    # Constants
+    R = 6371.0  # Earth's radius in kilometers
+    bearings = [0, 45, 90, 135, 180, 225, 270, 315]  # Bearings in degrees
+    
+    test_points = []
+    for bearing in bearings:
+        # Convert bearing to radians
+        brng_rad = math.radians(bearing)
+        
+        # Calculate the new latitude
+        new_lat = math.asin(math.sin(lat) * math.cos(distance / R) +
+                                math.cos(lat) * math.sin(distance / R) * math.cos(brng_rad))
+        
+        # Calculate the new longitude
+        new_lon = lon + math.atan2(math.sin(brng_rad) * math.sin(distance / R) * math.cos(lat),
+                                           math.cos(distance / R) - math.sin(lat) * math.sin(new_lat))
+                
+        # Append new point to the list
+        test_points.append((new_lat, new_lon))
+    
+    return test_points
 
 def readInSchools(conf):
     eras = []
@@ -173,11 +216,19 @@ def readInSchools(conf):
             eras.append(confEra)
     return eras
 
-con = "SEC"
+con = "BigTen"
 eras = readInSchools(con)
 for era in eras:
     print(era.name)
     print(era.calculateGeoCenter())
 
+# lat = 33.7550
+# lon = -84.3900
+# lat = 0.5795656669455838
+# lon = -1.5277691125964252
+# distance = math.radians(10018)
 
+# testPoints = generate_test_points(lat, lon, distance)
+# for point in testPoints:
+#     print(math.degrees(point[0]), math.degrees(point[1]))
 

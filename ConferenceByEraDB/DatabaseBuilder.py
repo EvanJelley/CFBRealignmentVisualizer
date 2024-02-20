@@ -2,59 +2,52 @@ import pandas as pd
 import sqlite3
 import os
 
-
-def dbBuilder(year, rawData, csv):
-    # Create a new database for each year
-    conn = sqlite3.connect("ConferenceByEra/" + csv[:-4] + "/" + str(round(year)) + ".db")
-    c = conn.cursor()
-
-    # Create table
-    c.execute('''CREATE TABLE Conference
-                 (Team text, Location text, Football text, Basketball text, Coordinates text)''')
-
-    # Insert data
-    for index, row in rawData.iterrows():
-        if row["Joined"] <= year and (row["Left"] > year or pd.isna(row["Left"])):
-            c.execute("INSERT INTO Conference VALUES (?, ?, ?, ?, ?)", (row["Institution"], row["Location"], row["Football"], row["Basketball"], row["Coordinates"]))
-
-    # Save (commit) the changes
-    conn.commit()
-
-    # Close connection
-    conn.close()
-
-def conferenceEraBuilder(csv):
-    
-    # Read in csv
-    rawData = pd.read_csv("ConferenceCSVs/" + csv)
-
-    # Set starting point
-    year = min(rawData["Joined"])
-
-    while True:
-
-        if not os.path.exists("ConferenceByEra/" + csv[:-4] + "/" + str(round(year)) + ".db"):
-            dbBuilder(year, rawData, csv)
-        else:
-            yearOptions = []
-            for joinYear in rawData["Joined"]:
-                if joinYear > year:
-                    yearOptions.append(joinYear)
-            for leftYear in rawData["Left"]:
-                if not leftYear:
-                    continue
-                if leftYear > year:
-                    yearOptions.append(leftYear)
-            if len(yearOptions) == 0:
-                break
-            year = min(yearOptions)
-            dbBuilder(year, rawData, csv)
-
-def main():
-    for file in os.listdir("ConferenceCSVs"):
+def dbBuilder():
+    # Pull CSVs
+    for file in os.listdir("FinalConferenceCSVs"):
         if file.endswith(".csv"):
+            rawData = pd.read_csv("FinalConferenceCSVs/" + file)
             print("Processing " + file + "...")
-            os.makedirs("ConferenceByEra/" + file[:-4], exist_ok=True)
-            conferenceEraBuilder(file)
 
-main()
+            # Create a new database for the conference
+            conn = sqlite3.connect("ConferenceByEraDB/" + file[:-4] + ".db")
+            c = conn.cursor()
+
+            # Set starting point
+            startYear = min(rawData["Joined"])
+
+            while True:
+                    
+                    yearOptions = []
+                    for joinYear in rawData["Joined"]:
+                        if joinYear > startYear:
+                            yearOptions.append(joinYear)
+                    for leftYear in rawData["Left"]:
+                        if not leftYear:
+                            continue
+                        if leftYear > startYear:
+                            yearOptions.append(leftYear)
+                    if len(yearOptions) == 0:
+                        endYear = 'Present'
+                    else:
+                        endYear = round(min(yearOptions))
+                    
+                    # Create table
+                    c.execute(f'''CREATE TABLE IF NOT EXISTS teams_{startYear}_{endYear}
+                                    (Team text, Location text, Football text, Basketball text, Coordinates text)''')
+    
+                    # Insert data
+                    for index, row in rawData.iterrows():
+                        if row["Joined"] <= startYear and (row["Left"] > startYear or pd.isna(row["Left"])):
+                            c.execute(f"INSERT INTO teams_{startYear}_{endYear} VALUES (?, ?, ?, ?, ?)", (row["Institution"], row["Location"], row["Football"], row["Basketball"], row["Coordinates"]))
+    
+                    # Save (commit) the changes
+                    conn.commit()
+                    
+                    # Update starting point
+                    startYear = endYear
+                    if len(yearOptions) == 0:
+                        break
+
+
+dbBuilder()

@@ -106,7 +106,6 @@ def cleanDataFrames(dfs):
         cleanedDFs.append(dfCleaner(df))
     return cleanedDFs
 
-# Need to add Football and Basketball data to the dataframe in form of Boolean values
 
 def combineDataFrames(dfs):
     """

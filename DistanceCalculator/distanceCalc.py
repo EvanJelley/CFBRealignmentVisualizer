@@ -2,6 +2,10 @@ import math
 import sqlite3
 import os
 import re
+import requests
+import pandas as pd
+import io
+from bs4 import BeautifulSoup
 
 class school(object):
 
@@ -24,15 +28,17 @@ class school(object):
     
 class conference(object):
 
-    def __init__(self, name, year):
+    def __init__(self, name, startYear, endYear):
         self.name = name
-        self.year = year
+        self.startYear = startYear
+        self.endYear = endYear
         self.schools = []
         self.geoCenter = None
+        self.capital = None
     
     def addSchool(self, school):
         self.schools.append(school)
-    
+
     def calculateGeoCenter(self):
 
         # Calculate initial center
@@ -84,16 +90,44 @@ class conference(object):
             if not newPointFlag:
                 testDistance = testDistance / 2
         currentPoint = (math.degrees(currentPoint[0]), math.degrees(currentPoint[1]))
-        return currentPoint
-
-
-        #### LEFT OFF HERE (step 5 of the method) ####
-
-
-            
-                   
+        self.geoCenter = currentPoint
 
         ##### Use Method A & B from this site: http://www.geomidpoint.com/calculation.html to calculate the center of the conference from #####
+
+    def findCapital(self, cities):
+        capital = None
+        currentDistance = None
+        for city in cities:
+            cityLat = math.radians(city.getLatitude())
+            cityLon = math.radians(city.getLongitude())
+            if capital == None:
+                capital = city
+                distance = pointToPointCalc(math.radians(self.geoCenter[0]), math.radians(self.geoCenter[1]), cityLat, cityLon)
+                currentDistance = distance
+            else:
+                distance = pointToPointCalc(math.radians(self.geoCenter[0]), math.radians(self.geoCenter[1]), cityLat, cityLon)
+                if distance < currentDistance:
+                    capital = city
+                    currentDistance = distance
+        self.capital = capital.city, capital.state
+
+
+class majorCity(object):
+
+    def __init__(self, city, state, latitude, longitude):
+        self.city = city
+        self.state = state
+        self.latitude = latitude
+        self.longitude = longitude
+    
+    def getLatitude(self):
+        return self.latitude
+    
+    def getLongitude(self):
+        return self.longitude
+    
+
+
 
 def coordinateCleaner(coordinate):
     lat = coordinate.split(",")[0].strip()
@@ -132,7 +166,7 @@ def pointToPointCalc(lat1, lon1, lat2, lon2):
     :return: distance between the two points (in radians)
     """
     R = 6371.009 # radius of the earth in kilometers
-    if abs(lat1 - lat2) < .000000000000001 and abs(lon1 - lon2) < .000000000000001:
+    if abs(lat1 - lat2) < .00000001 and abs(lon1 - lon2) < .00000001:
         return 0
     distance = math.acos(math.sin(lat1) * math.sin(lat2) + math.cos(lat1) * math.cos(lat2) * math.cos(lon1 - lon2)) * R
     return distance
@@ -172,63 +206,147 @@ def generate_test_points(lat, lon, distance):
     
     return test_points
 
-def readInSchools(conf):
-    eras = []
+def readInSchools():
+    conferencesByEraObjects = []
 
     # Find all the files in the directory
-    for file in os.listdir("ConferenceByEra/" + conf):
+    for file in os.listdir("ConferenceByEraDB"):
         if file.endswith(".db"):
+
+            conf = file[:-3] 
+
             print("Processing " + file + "...")
 
-            # Make conference object
-            confEra = conference(conf  + file[:-3], int(file[:-3]))
-
             # Connect to the database
-            conn = sqlite3.connect("ConferenceByEra/" + conf + "/" + file)
+            conn = sqlite3.connect("ConferenceByEraDB/" + file)
             cursor = conn.cursor()
 
-            # Get all the schools
-            cursor.execute("SELECT * FROM Conference")
-            rows = cursor.fetchall()
+            # Select table names from database
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
 
-            # Add the schools to the conference object
-            for row in rows:
-                name = row[0]
-                location = row[1]
-                if row[2] == "1":
-                    football = True
-                else:
-                    football = False
-                if row[3] == "1":
-                    basketball = True
-                else:
-                    basketball = False
-                coordinates = row[4]
-                latitude, longitude = coordinateCleaner(coordinates)
-                print(name)
-                latitude = convertDegreesMinutesSecondsToDecimal(latitude)
-                longitude = convertDegreesMinutesSecondsToDecimal(longitude)
-                schoolObj = school(name, location, football, basketball, latitude, longitude)
-                confEra.addSchool(schoolObj)
+            tables = cursor.fetchall()
+
+            # Itereate tables
+            for table in tables:
+                # Connect to table
+                print(f"Processing {table[0]}")
+                cursor.execute(f"SELECT * FROM {table[0]}")
+                
+                # Make conference era object
+                confEra = conference(conf, table[0][6:10], table[0][11:])
+                rows = cursor.fetchall()
+
+                # Add the schools to the conference object
+                for row in rows:
+                    name = row[0]
+                    location = row[1]
+                    if row[2] == "1":
+                        football = True
+                    else:
+                        football = False
+                    if row[3] == "1":
+                        basketball = True
+                    else:
+                        basketball = False
+                    coordinates = row[4]
+                    latitude, longitude = coordinateCleaner(coordinates)
+                    print(name)
+                    latitude = convertDegreesMinutesSecondsToDecimal(latitude)
+                    longitude = convertDegreesMinutesSecondsToDecimal(longitude)
+                    schoolObj = school(name, location, football, basketball, latitude, longitude)
+                    confEra.addSchool(schoolObj)
+                
+                # Calculate the center of the conference
+                print("Calculating center of conference...")
+                confEra.calculateGeoCenter()
+
+                # Find the capital of the conference
+                confEra.findCapital(cities)
+
+                # Add the conference era object to the list of conference era objects
+                conferencesByEraObjects.append(confEra)
             conn.close()
 
-            # Add the conference to the list of conferences
-            eras.append(confEra)
-    return eras
+    return conferencesByEraObjects   
 
-con = "BigTen"
-eras = readInSchools(con)
-for era in eras:
-    print(era.name)
-    print(era.calculateGeoCenter())
+def geoCenterDBBuilder():
 
-# lat = 33.7550
-# lon = -84.3900
-# lat = 0.5795656669455838
-# lon = -1.5277691125964252
-# distance = math.radians(10018)
+    # Read in the schools
+    conferences = readInSchools()
 
-# testPoints = generate_test_points(lat, lon, distance)
-# for point in testPoints:
-#     print(math.degrees(point[0]), math.degrees(point[1]))
+    # Create a new database
+    conn = sqlite3.connect("ConferenceByEraDB/GeoCenters.db")
+    c = conn.cursor()
+
+    # Create table
+    c.execute('''CREATE TABLE IF NOT EXISTS GeoCenters
+                    (Conference text, Era text, Latitude real, Longitude real)''')
+    for conference in conferences:
+        c.execute(f"INSERT INTO GeoCenters VALUES (?, ?, ?, ?)", (conference.name, conference.startYear + "-" + conference.endYear, conference.geoCenter[0], conference.geoCenter[1]))
+    conn.commit()
+    conn.close()
+
+def createMajorCitiesList():
+    URL = "https://en.wikipedia.org/wiki/List_of_United_States_cities_by_population"
+
+    page = requests.get(URL)
+    soup = BeautifulSoup(page.text, 'html.parser')
+    table = soup.find_all('table', {'class': 'wikitable'})[1:2]
+    tableString = str(table)
+    df = pd.read_html(io.StringIO(tableString))
+    df = pd.DataFrame(df[0])
+
+    # Flatten MultiIndex columns
+    df.columns = ['_'.join(col).strip() if col[0] != col[1] else col[0] for col in df.columns.values]
+    df = df.drop(0)
+    print(df)
+
+    majorCities = []
+    for row in df.iterrows():
+        city = row[1]["City"]
+        state = row[1]["ST"]
+        coord = str(row[1]["Location"]).strip()
+        coord = coord.split("/")[1:2]
+        for i in coord:
+            coord = i
+        print(coord)
+        print(type(coord))
+        latList = []
+        lonList = []
+        for i in coord:
+            nOrSFlag = False
+            if not nOrSFlag:
+                latList.append(i)
+            else:
+                lonList.append(i)
+            if type(i) == str:
+                nOrSFlag = True
+        print(latList)
+        print(lonList)
+        latList = latList[2:]
+        lat = "".join(str(element) for element in latList)
+        lon = "".join(str(element) for element in lonList)
+        # print(lat)
+        print(lon)
+        lon = float(lon[1:2])
+        lat = float(lat[1:2])
+        cityobj = majorCity(city, state, lat, lon)
+        majorCities.append(cityobj)
+    return majorCities
+
+cities = createMajorCitiesList()
+
+# print(cities[0].latitude, cities[0].longitude)
+# for city in cities:
+#     print(city.city, city.state, city.latitude, city.longitude)
+
+# conferences = readInSchools()
+
+# for conference in conferences:
+#     print(conference.name, conference.startYear, conference.endYear, conference.geoCenter, conference.capital)
+#     print("\n")
+
+
+# geoCenterDBBuilder()
+
 

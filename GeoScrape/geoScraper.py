@@ -36,9 +36,6 @@ def addCoordinatesToCSV(csvFile):
     
     df.to_csv("ConferenceCSVs/" + csvFile, index=False)
 
-
-
-
 def updateCSVs():
     """
     This function updates all csv files in the current directory.
@@ -47,7 +44,6 @@ def updateCSVs():
         if file.endswith(".csv"):
             print("Processing " + file + "...")
             addCoordinatesToCSV(file)
-
 
 # Correct "Left" column for csvs by replacing False with NaN
 def correctLeftColumn():

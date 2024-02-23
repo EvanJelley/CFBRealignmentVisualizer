@@ -35,6 +35,7 @@ class conference(object):
         self.schools = []
         self.geoCenter = None
         self.capital = None
+        self.avgDistance = None
     
     def addSchool(self, school):
         self.schools.append(school)
@@ -109,8 +110,17 @@ class conference(object):
                 if distance < currentDistance:
                     capital = city
                     currentDistance = distance
-        self.capital = capital.city, capital.state
+        self.capital = capital
+    
+    def findAvgDistance(self):
+        distance = 0
+        for school in self.schools:
+            distance += pointToPointCalc(math.radians(self.geoCenter[0]), math.radians(self.geoCenter[1]), math.radians(school.getLatitude()), math.radians(school.getLongitude()))
+        self.avgDistance = round(distance / len(self.schools), 2)
 
+    def __str__(self):
+        return self.name + " " + self.startYear + "-" + self.endYear
+    
 
 class majorCity(object):
 
@@ -126,9 +136,6 @@ class majorCity(object):
     def getLongitude(self):
         return self.longitude
     
-
-
-
 def coordinateCleaner(coordinate):
     lat = coordinate.split(",")[0].strip()
     lon = coordinate.split(",")[1].strip()
@@ -165,7 +172,7 @@ def pointToPointCalc(lat1, lon1, lat2, lon2):
     :params lat1, lat2, lon1, lon2: latitude and longitude of the two points (should be in radians)
     :return: distance between the two points (in radians)
     """
-    R = 6371.009 # radius of the earth in kilometers
+    R = 3958.8 # radius of the earth in miles
     if abs(lat1 - lat2) < .00000001 and abs(lon1 - lon2) < .00000001:
         return 0
     distance = math.acos(math.sin(lat1) * math.sin(lat2) + math.cos(lat1) * math.cos(lat2) * math.cos(lon1 - lon2)) * R
@@ -208,10 +215,11 @@ def generate_test_points(lat, lon, distance):
 
 def readInSchools():
     conferencesByEraObjects = []
+    cities = createMajorCitiesList()
 
     # Find all the files in the directory
     for file in os.listdir("ConferenceByEraDB"):
-        if file.endswith(".db"):
+        if file.endswith(".db") and file != "GeoCenters.db" and file != "ConferenceSummary.db":
 
             conf = file[:-3] 
 
@@ -229,7 +237,7 @@ def readInSchools():
             # Itereate tables
             for table in tables:
                 # Connect to table
-                print(f"Processing {table[0]}")
+                # print(f"Processing {table[0]}")
                 cursor.execute(f"SELECT * FROM {table[0]}")
                 
                 # Make conference era object
@@ -250,18 +258,20 @@ def readInSchools():
                         basketball = False
                     coordinates = row[4]
                     latitude, longitude = coordinateCleaner(coordinates)
-                    print(name)
                     latitude = convertDegreesMinutesSecondsToDecimal(latitude)
                     longitude = convertDegreesMinutesSecondsToDecimal(longitude)
                     schoolObj = school(name, location, football, basketball, latitude, longitude)
                     confEra.addSchool(schoolObj)
                 
                 # Calculate the center of the conference
-                print("Calculating center of conference...")
+                # print("Calculating center of conference...")
                 confEra.calculateGeoCenter()
 
                 # Find the capital of the conference
                 confEra.findCapital(cities)
+
+                # Find the average distance between the schools
+                confEra.findAvgDistance()
 
                 # Add the conference era object to the list of conference era objects
                 conferencesByEraObjects.append(confEra)
@@ -269,20 +279,22 @@ def readInSchools():
 
     return conferencesByEraObjects   
 
-def geoCenterDBBuilder():
+def conferenceSummaryDBBuilder():
 
-    # Read in the schools
     conferences = readInSchools()
 
     # Create a new database
-    conn = sqlite3.connect("ConferenceByEraDB/GeoCenters.db")
+    conn = sqlite3.connect("ConferenceByEraDB/ConferenceSummary.db")
     c = conn.cursor()
 
     # Create table
-    c.execute('''CREATE TABLE IF NOT EXISTS GeoCenters
-                    (Conference text, Era text, Latitude real, Longitude real)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS ConferenceSummaries
+                    (Conference text, Era text, Latitude real, Longitude real, Captial text, CapitalLatitude real, CapitalLongitude real, AvgDistance_miles real)''')
     for conference in conferences:
-        c.execute(f"INSERT INTO GeoCenters VALUES (?, ?, ?, ?)", (conference.name, conference.startYear + "-" + conference.endYear, conference.geoCenter[0], conference.geoCenter[1]))
+        print(conference.name, conference.startYear, conference.endYear, conference.geoCenter, conference.capital)
+        c.execute(f"INSERT INTO ConferenceSummaries VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (conference.name, conference.startYear + "-" + conference.endYear, 
+                   conference.geoCenter[0], conference.geoCenter[1], conference.capital.city + ", " + conference.capital.state,
+                   conference.capital.latitude, conference.capital.longitude, conference.avgDistance))
     conn.commit()
     conn.close()
 
@@ -299,61 +311,35 @@ def createMajorCitiesList():
     # Flatten MultiIndex columns
     df.columns = ['_'.join(col).strip() if col[0] != col[1] else col[0] for col in df.columns.values]
     df = df.drop(0)
-    print(df)
 
     majorCities = []
     for row in df.iterrows():
         city = row[1]["City"]
+        city = re.sub(r'\[.*?\]', '', city)
         state = row[1]["ST"]
+        state = re.sub(r'\[.*?\]', '', state)
         coord = str(row[1]["Location"])
         index = coord.rfind("\ufeff")
         coord = coord[index + 1:]
         coord = coord.strip()
         lat, lon = coord.split(" ")
-        print(lat)
-        print(lon)
-        print(coord)
-        print(type(coord))
-        # latList = []
-        # lonList = []
-        # for i in coord:
-        #     nOrSFlag = False
-        #     if not nOrSFlag:
-        #         latList.append(i)
-        #     else:
-        #         lonList.append(i)
-        #     if i == "N" or i == "S":
-        #         nOrSFlag = True
-        # print(latList)
-        # print(lonList)
-        # latList = latList[2:]
-        # lat = "".join(str(element) for element in latList)
-        # lon = "".join(str(element) for element in lonList)
-        # print(lat)
-        # print(lon)
-        print(type(lat))
-        print(type(lon))
-        lon = float(lon[:-2])
+        lon = -float(lon[:-2])
         lat = float(lat[:-2])
         cityobj = majorCity(city, state, lat, lon)
         majorCities.append(cityobj)
     return majorCities
 
-cities = createMajorCitiesList()
-for city in cities:
-    print(city.city, city.state, city.latitude, city.longitude)
+def buildCitiesCSV(cities):
+    df = pd.DataFrame(columns=["City", "State", "Latitude", "Longitude"])
+    for city in cities:
+        df = df._append({"City": city.city, "State": city.state, "Latitude": city.latitude, "Longitude": city.longitude}, ignore_index=True)
+    df.to_csv("DistanceCalculator/majorCities.csv", index=False)
 
-# print(cities[0].latitude, cities[0].longitude)
-# for city in cities:
-#     print(city.city, city.state, city.latitude, city.longitude)
+# buildCitiesCSV(cities)
 
+# cities = createMajorCitiesList()
 # conferences = readInSchools()
-
 # for conference in conferences:
-#     print(conference.name, conference.startYear, conference.endYear, conference.geoCenter, conference.capital)
-#     print("\n")
+#     print(conference.name, conference.startYear, conference.endYear, conference.geoCenter, conference.capital, conference.avgDistance)
 
-
-# geoCenterDBBuilder()
-
-
+conferenceSummaryDBBuilder()

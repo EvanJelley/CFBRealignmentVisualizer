@@ -305,36 +305,43 @@ def createMajorCitiesList():
     for row in df.iterrows():
         city = row[1]["City"]
         state = row[1]["ST"]
-        coord = str(row[1]["Location"]).strip()
-        coord = coord.split("/")[1:2]
-        for i in coord:
-            coord = i
+        coord = str(row[1]["Location"])
+        index = coord.rfind("\ufeff")
+        coord = coord[index + 1:]
+        coord = coord.strip()
+        lat, lon = coord.split(" ")
+        print(lat)
+        print(lon)
         print(coord)
         print(type(coord))
-        latList = []
-        lonList = []
-        for i in coord:
-            nOrSFlag = False
-            if not nOrSFlag:
-                latList.append(i)
-            else:
-                lonList.append(i)
-            if type(i) == str:
-                nOrSFlag = True
-        print(latList)
-        print(lonList)
-        latList = latList[2:]
-        lat = "".join(str(element) for element in latList)
-        lon = "".join(str(element) for element in lonList)
+        # latList = []
+        # lonList = []
+        # for i in coord:
+        #     nOrSFlag = False
+        #     if not nOrSFlag:
+        #         latList.append(i)
+        #     else:
+        #         lonList.append(i)
+        #     if i == "N" or i == "S":
+        #         nOrSFlag = True
+        # print(latList)
+        # print(lonList)
+        # latList = latList[2:]
+        # lat = "".join(str(element) for element in latList)
+        # lon = "".join(str(element) for element in lonList)
         # print(lat)
-        print(lon)
-        lon = float(lon[1:2])
-        lat = float(lat[1:2])
+        # print(lon)
+        print(type(lat))
+        print(type(lon))
+        lon = float(lon[:-2])
+        lat = float(lat[:-2])
         cityobj = majorCity(city, state, lat, lon)
         majorCities.append(cityobj)
     return majorCities
 
 cities = createMajorCitiesList()
+for city in cities:
+    print(city.city, city.state, city.latitude, city.longitude)
 
 # print(cities[0].latitude, cities[0].longitude)
 # for city in cities:

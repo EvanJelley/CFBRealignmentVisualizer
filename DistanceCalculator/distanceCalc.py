@@ -33,12 +33,28 @@ class conference(object):
         self.startYear = startYear
         self.endYear = endYear
         self.schools = []
+        self.bBallSchools = None
+        self.fBallSchools = None
         self.geoCenter = None
+        self.bBallGeoCenter = None
+        self.fBallGeoCenter = None
         self.capital = None
-        self.avgDistance = None
+        self.avgDistanceFromGeoCenter = None
+        self.avgDistanceFromOtherSchools = None
     
     def addSchool(self, school):
         self.schools.append(school)
+
+    def findSportSpecificSchools(self):
+        bBallSchools = []
+        fBallSchools = []
+        for school in self.schools:
+            if school.football:
+                fBallSchools.append(school)
+            if school.basketball:
+                bBallSchools.append(school)
+        self.bBallSchools = bBallSchools
+        self.fBallSchools = fBallSchools
 
     def calculateGeoCenter(self):
 
@@ -48,7 +64,6 @@ class conference(object):
         z = []
         schoolLocations = []
         for school in self.schools:
-            # print(school.getLatitude(), school.getLongitude())
             latitude = math.radians(school.getLatitude())
             longitude = math.radians(school.getLongitude())
             schoolLocations.append((latitude, longitude))
@@ -69,16 +84,12 @@ class conference(object):
         # Test school locations
         for school in schoolLocations:
             schoolDistance = distanceCalc(school, schoolLocations)
-            # print("Current distance: " + str(distance))
-            # print("Test distance: " + str(testDistance))
             if schoolDistance < totDistance:
                 currentPoint = school
                 totDistance = schoolDistance
-                # print("New center: " + str(currentPoint) + " with distance: " + str(distance) + "\n")
         
         testDistance = 10018 / 6371.0
         while testDistance > 0.000000002:
-            # print(currentPoint[0], currentPoint[1])
             testPoints = generate_test_points(currentPoint[0], currentPoint[1], testDistance)
             newPointFlag = False
             for point in testPoints:
@@ -87,7 +98,6 @@ class conference(object):
                     currentPoint = point
                     totDistance = testPointDistance
                     newPointFlag = True
-                    # print("New center from Narrowing method: " + str(currentPoint) + " with distance: " + str(distance) + "\n")
             if not newPointFlag:
                 testDistance = testDistance / 2
         currentPoint = (math.degrees(currentPoint[0]), math.degrees(currentPoint[1]))
@@ -112,11 +122,18 @@ class conference(object):
                     currentDistance = distance
         self.capital = capital
     
-    def findAvgDistance(self):
+    def findAvgDistanceFromGeoCenter(self):
         distance = 0
         for school in self.schools:
             distance += pointToPointCalc(math.radians(self.geoCenter[0]), math.radians(self.geoCenter[1]), math.radians(school.getLatitude()), math.radians(school.getLongitude()))
-        self.avgDistance = round(distance / len(self.schools), 2)
+        self.avgDistanceFromGeoCenter = round(distance / len(self.schools), 2)
+    
+    def findAvgDistanceFromOtherSchools(self):
+        distance = 0
+        for school in self.schools:
+            for school2 in self.schools:
+                distance += pointToPointCalc(math.radians(school.getLatitude()), math.radians(school.getLongitude()), math.radians(school2.getLatitude()), math.radians(school2.getLongitude()))
+        self.avgDistanceFromOtherSchools = round(distance / (len(self.schools) * len(self.schools)), 2)
 
     def __str__(self):
         return self.name + " " + self.startYear + "-" + self.endYear
@@ -263,15 +280,20 @@ def readInSchools():
                     schoolObj = school(name, location, football, basketball, latitude, longitude)
                     confEra.addSchool(schoolObj)
                 
+                # Find the schools that play basketball and football
+                confEra.findSportSpecificSchools()
+
                 # Calculate the center of the conference
-                # print("Calculating center of conference...")
                 confEra.calculateGeoCenter()
 
                 # Find the capital of the conference
                 confEra.findCapital(cities)
 
                 # Find the average distance between the schools
-                confEra.findAvgDistance()
+                confEra.findAvgDistanceFromOtherSchools()
+
+                # Find the average distance from the center of the conference
+                confEra.findAvgDistanceFromGeoCenter()
 
                 # Add the conference era object to the list of conference era objects
                 conferencesByEraObjects.append(confEra)
@@ -287,14 +309,15 @@ def conferenceSummaryDBBuilder():
     conn = sqlite3.connect("ConferenceByEraDB/ConferenceSummary.db")
     c = conn.cursor()
 
+    c.execute("DROP TABLE IF EXISTS ConferenceSummaries")
     # Create table
     c.execute('''CREATE TABLE IF NOT EXISTS ConferenceSummaries
-                    (Conference text, Era text, Latitude real, Longitude real, Captial text, CapitalLatitude real, CapitalLongitude real, AvgDistance_miles real)''')
+                    (Conference text, Era text, Latitude real, Longitude real, Captial text, CapitalLatitude real, CapitalLongitude real, AvgDistanceFromCenter_miles real, AvgDistanceBetweenSchools_miles real)''')
     for conference in conferences:
         print(conference.name, conference.startYear, conference.endYear, conference.geoCenter, conference.capital)
-        c.execute(f"INSERT INTO ConferenceSummaries VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (conference.name, conference.startYear + "-" + conference.endYear, 
+        c.execute(f"INSERT INTO ConferenceSummaries VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (conference.name, conference.startYear + "-" + conference.endYear, 
                    conference.geoCenter[0], conference.geoCenter[1], conference.capital.city + ", " + conference.capital.state,
-                   conference.capital.latitude, conference.capital.longitude, conference.avgDistance))
+                   conference.capital.latitude, conference.capital.longitude, conference.avgDistanceFromGeoCenter, conference.avgDistanceFromOtherSchools))
     conn.commit()
     conn.close()
 
@@ -335,6 +358,22 @@ def buildCitiesCSV(cities):
         df = df._append({"City": city.city, "State": city.state, "Latitude": city.latitude, "Longitude": city.longitude}, ignore_index=True)
     df.to_csv("DistanceCalculator/majorCities.csv", index=False)
 
+
+conferences = readInSchools()
+for c in conferences:
+    if c.name == "ACC" and c.bBallSchools != c.fBallSchools:
+        print(c.name, c.startYear)
+        bBall = []
+        fBall = []
+        for s in c.bBallSchools:
+            if s not in c.fBallSchools:
+                bBall.append(s.name)
+        for s in c.fBallSchools:
+            if s not in c.bBallSchools:
+                fBall.append(s.name)
+        print(f"Bball only: {bBall}")
+        print(f"Fball only: {fBall}")
+
 # buildCitiesCSV(cities)
 
 # cities = createMajorCitiesList()
@@ -342,4 +381,4 @@ def buildCitiesCSV(cities):
 # for conference in conferences:
 #     print(conference.name, conference.startYear, conference.endYear, conference.geoCenter, conference.capital, conference.avgDistance)
 
-conferenceSummaryDBBuilder()
+# conferenceSummaryDBBuilder()

@@ -32,6 +32,7 @@ def dbBuilder():
                     else:
                         endYear = round(min(yearOptions))
                     
+                    c.execute(f"DROP TABLE IF EXISTS teams_{startYear}_{endYear}")
                     # Create table
                     c.execute(f'''CREATE TABLE IF NOT EXISTS teams_{startYear}_{endYear}
                                     (Team text, Location text, Football text, Basketball text, Coordinates text)''')

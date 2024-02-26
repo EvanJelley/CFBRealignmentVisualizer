@@ -39,8 +39,14 @@ class conference(object):
         self.bBallGeoCenter = None
         self.fBallGeoCenter = None
         self.capital = None
+        self.bBallCapital = None
+        self.fBallCapital = None
         self.avgDistanceFromGeoCenter = None
+        self.bBallAvgDistanceFromGeoCenter = None
+        self.fBallAvgDistanceFromGeoCenter = None
         self.avgDistanceFromOtherSchools = None
+        self.bBallAvgDistanceFromOtherSchools = None
+        self.fBallAvgDistanceFromOtherSchools = None
     
     def addSchool(self, school):
         self.schools.append(school)
@@ -50,95 +56,121 @@ class conference(object):
         fBallSchools = []
         for school in self.schools:
             if school.football:
-                fBallSchools.append(school)
+                    fBallSchools.append(school)
             if school.basketball:
                 bBallSchools.append(school)
-        self.bBallSchools = bBallSchools
-        self.fBallSchools = fBallSchools
+            self.bBallSchools = bBallSchools
+            self.fBallSchools = fBallSchools
 
-    def calculateGeoCenter(self):
-
-        # Calculate initial center
-        x = []
-        y = []
-        z = []
-        schoolLocations = []
-        for school in self.schools:
-            latitude = math.radians(school.getLatitude())
-            longitude = math.radians(school.getLongitude())
-            schoolLocations.append((latitude, longitude))
-            x.append(math.cos(latitude) * math.cos(longitude))
-            y.append(math.cos(latitude) * math.sin(longitude))
-            z.append(math.sin(latitude))
-        x = sum(x) / len(x)
-        y = sum(y) / len(y)
-        z = sum(z) / len(z)
-        centralLongitude = math.atan2(y, x)
-        centralSquareRoot = math.sqrt(x * x + y * y)
-        centralLatitude = math.atan2(z, centralSquareRoot)
-
-        # Iterate to find better center
-        currentPoint = (centralLatitude, centralLongitude)
-        totDistance = distanceCalc(currentPoint, schoolLocations)
-
-        # Test school locations
-        for school in schoolLocations:
-            schoolDistance = distanceCalc(school, schoolLocations)
-            if schoolDistance < totDistance:
-                currentPoint = school
-                totDistance = schoolDistance
-        
-        testDistance = 10018 / 6371.0
-        while testDistance > 0.000000002:
-            testPoints = generate_test_points(currentPoint[0], currentPoint[1], testDistance)
-            newPointFlag = False
-            for point in testPoints:
-                testPointDistance = distanceCalc(point, schoolLocations)
-                if testPointDistance < totDistance:
-                    currentPoint = point
-                    totDistance = testPointDistance
-                    newPointFlag = True
-            if not newPointFlag:
-                testDistance = testDistance / 2
-        currentPoint = (math.degrees(currentPoint[0]), math.degrees(currentPoint[1]))
-        self.geoCenter = currentPoint
-
-        ##### Use Method A & B from this site: http://www.geomidpoint.com/calculation.html to calculate the center of the conference from #####
+    def findGeoCenter(self):
+        if self.bBallSchools == self.fBallSchools:
+            schoolLocations = []
+            for s in self.schools:
+                latitude = s.getLatitude()
+                longitude = s.getLongitude()
+                schoolLocations.append((latitude, longitude))
+            self.geoCenter = calculateGeoCenter(schoolLocations)
+        else:
+            bBallLocations = []
+            fBallLocations = []
+            for s in self.bBallSchools:
+                latitude = s.getLatitude()
+                longitude = s.getLongitude()
+                bBallLocations.append((latitude, longitude))
+            for s in self.fBallSchools:
+                latitude = s.getLatitude()
+                longitude = s.getLongitude()
+                fBallLocations.append((latitude, longitude))
+            self.bBallGeoCenter = calculateGeoCenter(bBallLocations)
+            self.fBallGeoCenter = calculateGeoCenter(fBallLocations)
 
     def findCapital(self, cities):
-        capital = None
-        currentDistance = None
-        for city in cities:
-            cityLat = math.radians(city.getLatitude())
-            cityLon = math.radians(city.getLongitude())
-            if capital == None:
-                capital = city
-                distance = pointToPointCalc(math.radians(self.geoCenter[0]), math.radians(self.geoCenter[1]), cityLat, cityLon)
-                currentDistance = distance
-            else:
-                distance = pointToPointCalc(math.radians(self.geoCenter[0]), math.radians(self.geoCenter[1]), cityLat, cityLon)
-                if distance < currentDistance:
+        if self.bBallSchools == self.fBallSchools:
+            capital = None
+            currentDistance = None
+            for city in cities:
+                cityLat = math.radians(city.getLatitude())
+                cityLon = math.radians(city.getLongitude())
+                if capital == None:
                     capital = city
+                    distance = pointToPointCalc(math.radians(self.geoCenter[0]), math.radians(self.geoCenter[1]), cityLat, cityLon)
                     currentDistance = distance
-        self.capital = capital
+                else:
+                    distance = pointToPointCalc(math.radians(self.geoCenter[0]), math.radians(self.geoCenter[1]), cityLat, cityLon)
+                    if distance < currentDistance:
+                        capital = city
+                        currentDistance = distance
+            self.capital = capital
+        else:
+            bBallCapital = None
+            fBallCapital = None
+            currentDistance = None
+            for city in cities:
+                cityLat = math.radians(city.getLatitude())
+                cityLon = math.radians(city.getLongitude())
+                if bBallCapital == None:
+                    bBallCapital = city
+                    distance = pointToPointCalc(math.radians(self.bBallGeoCenter[0]), math.radians(self.bBallGeoCenter[1]), cityLat, cityLon)
+                    currentDistance = distance
+                else:
+                    distance = pointToPointCalc(math.radians(self.bBallGeoCenter[0]), math.radians(self.bBallGeoCenter[1]), cityLat, cityLon)
+                    if distance < currentDistance:
+                        bBallCapital = city
+                        currentDistance = distance
+            self.bBallCapital = bBallCapital
+            currentDistance = None
+            for city in cities:
+                cityLat = math.radians(city.getLatitude())
+                cityLon = math.radians(city.getLongitude())
+                if fBallCapital == None:
+                    fBallCapital = city
+                    distance = pointToPointCalc(math.radians(self.fBallGeoCenter[0]), math.radians(self.fBallGeoCenter[1]), cityLat, cityLon)
+                    currentDistance = distance
+                else:
+                    distance = pointToPointCalc(math.radians(self.fBallGeoCenter[0]), math.radians(self.fBallGeoCenter[1]), cityLat, cityLon)
+                    if distance < currentDistance:
+                        fBallCapital = city
+                        currentDistance = distance
+            self.fBallCapital = fBallCapital
     
     def findAvgDistanceFromGeoCenter(self):
-        distance = 0
-        for school in self.schools:
-            distance += pointToPointCalc(math.radians(self.geoCenter[0]), math.radians(self.geoCenter[1]), math.radians(school.getLatitude()), math.radians(school.getLongitude()))
-        self.avgDistanceFromGeoCenter = round(distance / len(self.schools), 2)
+        if self.bBallSchools == self.fBallSchools:
+            distance = 0
+            for school in self.schools:
+                distance += pointToPointCalc(math.radians(self.geoCenter[0]), math.radians(self.geoCenter[1]), math.radians(school.getLatitude()), math.radians(school.getLongitude()))
+            self.avgDistanceFromGeoCenter = round(distance / len(self.schools), 2)
+        else:
+            distance = 0
+            for school in self.bBallSchools:
+                distance += pointToPointCalc(math.radians(self.bBallGeoCenter[0]), math.radians(self.bBallGeoCenter[1]), math.radians(school.getLatitude()), math.radians(school.getLongitude()))
+            self.bBallAvgDistanceFromGeoCenter = round(distance / len(self.bBallSchools), 2)
+            distance = 0
+            for school in self.fBallSchools:
+                distance += pointToPointCalc(math.radians(self.fBallGeoCenter[0]), math.radians(self.fBallGeoCenter[1]), math.radians(school.getLatitude()), math.radians(school.getLongitude()))
+            self.fBallAvgDistanceFromGeoCenter = round(distance / len(self.fBallSchools), 2)
     
     def findAvgDistanceFromOtherSchools(self):
-        distance = 0
-        for school in self.schools:
-            for school2 in self.schools:
-                distance += pointToPointCalc(math.radians(school.getLatitude()), math.radians(school.getLongitude()), math.radians(school2.getLatitude()), math.radians(school2.getLongitude()))
-        self.avgDistanceFromOtherSchools = round(distance / (len(self.schools) * len(self.schools)), 2)
+        if self.bBallSchools == self.fBallSchools:
+            distance = 0
+            for school in self.schools:
+                for school2 in self.schools:
+                    distance += pointToPointCalc(math.radians(school.getLatitude()), math.radians(school.getLongitude()), math.radians(school2.getLatitude()), math.radians(school2.getLongitude()))
+            self.avgDistanceFromOtherSchools = round(distance / (len(self.schools) * len(self.schools)), 2)
+        else:
+            distance = 0
+            for school in self.bBallSchools:
+                for school2 in self.bBallSchools:
+                    distance += pointToPointCalc(math.radians(school.getLatitude()), math.radians(school.getLongitude()), math.radians(school2.getLatitude()), math.radians(school2.getLongitude()))
+            self.bBallAvgDistanceFromOtherSchools = round(distance / (len(self.bBallSchools) * len(self.bBallSchools)), 2)
+            distance = 0
+            for school in self.fBallSchools:
+                for school2 in self.fBallSchools:
+                    distance += pointToPointCalc(math.radians(school.getLatitude()), math.radians(school.getLongitude()), math.radians(school2.getLatitude()), math.radians(school2.getLongitude()))
+            self.fBallAvgDistanceFromOtherSchools = round(distance / (len(self.fBallSchools) * len(self.fBallSchools)), 2)
 
     def __str__(self):
         return self.name + " " + self.startYear + "-" + self.endYear
     
-
 class majorCity(object):
 
     def __init__(self, city, state, latitude, longitude):
@@ -284,7 +316,7 @@ def readInSchools():
                 confEra.findSportSpecificSchools()
 
                 # Calculate the center of the conference
-                confEra.calculateGeoCenter()
+                confEra.findGeoCenter()
 
                 # Find the capital of the conference
                 confEra.findCapital(cities)
@@ -359,20 +391,21 @@ def buildCitiesCSV(cities):
     df.to_csv("DistanceCalculator/majorCities.csv", index=False)
 
 
-conferences = readInSchools()
-for c in conferences:
-    if c.name == "ACC" and c.bBallSchools != c.fBallSchools:
-        print(c.name, c.startYear)
-        bBall = []
-        fBall = []
-        for s in c.bBallSchools:
-            if s not in c.fBallSchools:
-                bBall.append(s.name)
-        for s in c.fBallSchools:
-            if s not in c.bBallSchools:
-                fBall.append(s.name)
-        print(f"Bball only: {bBall}")
-        print(f"Fball only: {fBall}")
+
+# conferences = readInSchools()
+# for c in conferences:
+#     if c.name == "ACC" and c.bBallSchools != c.fBallSchools:
+#         print(c.name, c.startYear)
+#         bBall = []
+#         fBall = []
+#         for s in c.bBallSchools:
+#             if s not in c.fBallSchools:
+#                 bBall.append(s.name)
+#         for s in c.fBallSchools:
+#             if s not in c.bBallSchools:
+#                 fBall.append(s.name)
+#         print(f"Bball only: {bBall}")
+#         print(f"Fball only: {fBall}")
 
 # buildCitiesCSV(cities)
 
@@ -382,3 +415,75 @@ for c in conferences:
 #     print(conference.name, conference.startYear, conference.endYear, conference.geoCenter, conference.capital, conference.avgDistance)
 
 # conferenceSummaryDBBuilder()
+    
+
+
+# schoolLocations = []
+
+# for school in self.schools:
+#     latitude = math.radians(school.getLatitude())
+#     longitude = math.radians(school.getLongitude())
+#     schoolLocations.append((latitude, longitude))
+
+
+
+def calculateGeoCenter(points):
+    ##### Used Method A & B from this site: http://www.geomidpoint.com/calculation.html#####
+    """
+    Calculate the geographic center of a set of points
+    :params points: a list of tuples with the latitude and longitude of the set of points
+    """
+
+    # Calculate initial center
+    x = []
+    y = []
+    z = []
+    radianPoints = []
+    for point in points:
+        latitude = math.radians(point[0])
+        longitude = math.radians(point[1])
+        radianPoints.append((latitude, longitude))
+        x.append(math.cos(latitude) * math.cos(longitude))
+        y.append(math.cos(latitude) * math.sin(longitude))
+        z.append(math.sin(latitude))
+    x = sum(x) / len(x)
+    y = sum(y) / len(y)
+    z = sum(z) / len(z)
+    centralLongitude = math.atan2(y, x)
+    centralSquareRoot = math.sqrt(x * x + y * y)
+    centralLatitude = math.atan2(z, centralSquareRoot)
+
+    # Iterate to find better center
+    currentPoint = (centralLatitude, centralLongitude)
+    totDistance = distanceCalc(currentPoint, radianPoints)
+
+    # Test points for a better center
+    for point in radianPoints:
+        newDistance = distanceCalc(point, radianPoints)
+        if newDistance < totDistance:
+            currentPoint = point
+            totDistance = newDistance
+    
+    testDistance = 10018 / 6371.0
+    while testDistance > 0.000000002:
+        testPoints = generate_test_points(currentPoint[0], currentPoint[1], testDistance)
+        newPointFlag = False
+        for point in testPoints:
+            testPointDistance = distanceCalc(point, radianPoints)
+            if testPointDistance < totDistance:
+                currentPoint = point
+                totDistance = testPointDistance
+                newPointFlag = True
+        if not newPointFlag:
+            testDistance = testDistance / 2
+    currentPoint = (math.degrees(currentPoint[0]), math.degrees(currentPoint[1]))
+    return currentPoint
+
+
+confs = readInSchools()
+
+for c in confs:
+    if c.bBallSchools != c.fBallSchools:
+        print(c)
+        print(c.bBallGeoCenter, c.fBallGeoCenter)
+        print(c.bBallCapital.city, c.fBallCapital.city)

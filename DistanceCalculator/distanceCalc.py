@@ -344,12 +344,19 @@ def conferenceSummaryDBBuilder():
     c.execute("DROP TABLE IF EXISTS ConferenceSummaries")
     # Create table
     c.execute('''CREATE TABLE IF NOT EXISTS ConferenceSummaries
-                    (Conference text, Era text, Latitude real, Longitude real, Captial text, CapitalLatitude real, CapitalLongitude real, AvgDistanceFromCenter_miles real, AvgDistanceBetweenSchools_miles real)''')
+                    (Conference text, Era text, Sports text, Latitude real, Longitude real, Captial text, CapitalLatitude real, CapitalLongitude real, AvgDistanceFromCenter_miles real, AvgDistanceBetweenSchools_miles real)''')
     for conference in conferences:
-        print(conference.name, conference.startYear, conference.endYear, conference.geoCenter, conference.capital)
-        c.execute(f"INSERT INTO ConferenceSummaries VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (conference.name, conference.startYear + "-" + conference.endYear, 
-                   conference.geoCenter[0], conference.geoCenter[1], conference.capital.city + ", " + conference.capital.state,
+        if conference.bBallSchools == conference.fBallSchools:
+            c.execute(f"INSERT INTO ConferenceSummaries VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (conference.name, conference.startYear + "-" + conference.endYear, 
+                   "All", conference.geoCenter[0], conference.geoCenter[1], conference.capital.city + ", " + conference.capital.state,
                    conference.capital.latitude, conference.capital.longitude, conference.avgDistanceFromGeoCenter, conference.avgDistanceFromOtherSchools))
+        else:
+            c.execute(f"INSERT INTO ConferenceSummaries VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (conference.name, conference.startYear + "-" + conference.endYear, 
+                   "Football", conference.fBallGeoCenter[0], conference.fBallGeoCenter[1], conference.fBallCapital.city + ", " + conference.fBallCapital.state,
+                   conference.fBallCapital.latitude, conference.fBallCapital.longitude, conference.fBallAvgDistanceFromGeoCenter, conference.fBallAvgDistanceFromOtherSchools))
+            c.execute(f"INSERT INTO ConferenceSummaries VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (conference.name, conference.startYear + "-" + conference.endYear, 
+                   "Basketball", conference.bBallGeoCenter[0], conference.bBallGeoCenter[1], conference.bBallCapital.city + ", " + conference.bBallCapital.state,
+                   conference.bBallCapital.latitude, conference.bBallCapital.longitude, conference.bBallAvgDistanceFromGeoCenter, conference.bBallAvgDistanceFromOtherSchools))
     conn.commit()
     conn.close()
 
@@ -389,43 +396,6 @@ def buildCitiesCSV(cities):
     for city in cities:
         df = df._append({"City": city.city, "State": city.state, "Latitude": city.latitude, "Longitude": city.longitude}, ignore_index=True)
     df.to_csv("DistanceCalculator/majorCities.csv", index=False)
-
-
-
-# conferences = readInSchools()
-# for c in conferences:
-#     if c.name == "ACC" and c.bBallSchools != c.fBallSchools:
-#         print(c.name, c.startYear)
-#         bBall = []
-#         fBall = []
-#         for s in c.bBallSchools:
-#             if s not in c.fBallSchools:
-#                 bBall.append(s.name)
-#         for s in c.fBallSchools:
-#             if s not in c.bBallSchools:
-#                 fBall.append(s.name)
-#         print(f"Bball only: {bBall}")
-#         print(f"Fball only: {fBall}")
-
-# buildCitiesCSV(cities)
-
-# cities = createMajorCitiesList()
-# conferences = readInSchools()
-# for conference in conferences:
-#     print(conference.name, conference.startYear, conference.endYear, conference.geoCenter, conference.capital, conference.avgDistance)
-
-# conferenceSummaryDBBuilder()
-    
-
-
-# schoolLocations = []
-
-# for school in self.schools:
-#     latitude = math.radians(school.getLatitude())
-#     longitude = math.radians(school.getLongitude())
-#     schoolLocations.append((latitude, longitude))
-
-
 
 def calculateGeoCenter(points):
     ##### Used Method A & B from this site: http://www.geomidpoint.com/calculation.html#####
@@ -479,11 +449,14 @@ def calculateGeoCenter(points):
     currentPoint = (math.degrees(currentPoint[0]), math.degrees(currentPoint[1]))
     return currentPoint
 
+# conferenceSummaryDBBuilder()
 
-confs = readInSchools()
 
-for c in confs:
-    if c.bBallSchools != c.fBallSchools:
-        print(c)
-        print(c.bBallGeoCenter, c.fBallGeoCenter)
-        print(c.bBallCapital.city, c.fBallCapital.city)
+
+# confs = readInSchools()
+
+# for c in confs:
+#     if c.bBallSchools != c.fBallSchools:
+#         print(c)
+#         print(c.bBallGeoCenter, c.fBallGeoCenter)
+#         print(c.bBallCapital.city, c.fBallCapital.city)

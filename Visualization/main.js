@@ -8,21 +8,32 @@ import Feature from 'ol/Feature.js';
 import Point from 'ol/geom/Point.js';
 import VectorLayer from 'ol/layer/Vector.js';
 import { Vector as VectorSource } from 'ol/source.js';
-import fs from 'fs';
 import Papa from 'papaparse';
+// import fs from 'fs';
 
 const vectorSource = new VectorSource();
 
-const file = fs.createReadStream('FinalConferenceCSVs/BigTen.csv');
+// const file = fs.createReadStream('practiceBigTen.csv');
 
-Papa.parse(file, {
-    complete: (results) => {
+fetch('../practiceBigTen.csv')
+  .then(response => response.text())
+  .then(csvString => {
+    Papa.parse(csvString, {
+      complete: (results) => {
         for (let i of results.data) {
-            const coordinates = i[6];
-            console.log(coordinates);
+          let lat = i[4]
+          let lon = i[5]
+          console.log(lat, lon)
+          const marker = new Feature({
+            geometry: new Point(fromLonLat([lon, lat]))
+          });
+          vectorSource.addFeature(marker);
         }
-    }
-});
+      }
+    }); console.log(csvString);
+  })
+  .catch(error => console.error('Error fetching CSV:', error));
+
 
 // client.open('GET', '//FinalConferenceCSVs/BigTen.csv');
 // client.onload = function () {
@@ -44,6 +55,8 @@ Papa.parse(file, {
 // });
 
 // vectorSource.addFeature(marker);
+
+
 
 // const vectorLayer = new VectorLayer({
 //   source: vectorSource

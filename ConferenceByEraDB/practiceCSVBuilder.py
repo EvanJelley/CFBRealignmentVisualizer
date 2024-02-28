@@ -7,10 +7,12 @@ cursor = conn.cursor()
 
 # Get the table names
 cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-table_name = cursor.fetchone()[0]
+table_names = cursor.fetchall()
+table_name = table_names[-1]
+print('Table name:', table_name[0])
 
 # Fetch all rows from the table
-cursor.execute(f"SELECT * FROM {table_name};")
+cursor.execute("SELECT * FROM " + table_name[0] + ";")
 rows = cursor.fetchall()
 
 # Get the column names

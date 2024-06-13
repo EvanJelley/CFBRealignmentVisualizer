@@ -10,6 +10,7 @@ def coordinates(request, conference, year):
     db_path = settings.DATA_DIR / f'{conference}.db'
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
+    
 
 
 

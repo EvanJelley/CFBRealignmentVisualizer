@@ -1,10 +1,6 @@
 from rest_framework import serializers
-from .models import Conference, School, Year, ConferenceByYear
+from .models import School, Year, ConferenceByYear, ConferenceName
 
-class ConferenceSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Conference
-        fields = ['id', 'name']
 
 class SchoolSerializer(serializers.ModelSerializer):
     class Meta:
@@ -16,11 +12,33 @@ class YearSerializer(serializers.ModelSerializer):
         model = Year
         fields = ['id', 'year']
 
-class ConferenceByYearSerializer(serializers.ModelSerializer):
-    conference = ConferenceSerializer()
-    year = YearSerializer()
-    school = SchoolSerializer(many=True)
+class ConferenceNameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConferenceName
+        fields = ['id', 'name']
+
+class AllConferenceByYearSerializer(serializers.ModelSerializer):
+    year = serializers.SerializerMethodField()
+    schools = SchoolSerializer(many=True)
+    conference = serializers.SerializerMethodField()
 
     class Meta:
         model = ConferenceByYear
-        fields = ['id', 'conference', 'year', 'school']
+        fields = ['id', 'year', 'schools', 'conference', 'football', 'basketball', 'centerLat', 'centerLon', 'capital', 'avgDistanceFromCenter', 'avgDistanceBetweenSchools']
+
+    def get_year(self, obj):
+        return obj.year.year
+    
+    def get_conference(self, obj):
+        return obj.conference.name
+
+class SpecificConferenceByYearSerializer(serializers.ModelSerializer):
+    year = serializers.SerializerMethodField()
+    schools = SchoolSerializer(many=True)
+
+    class Meta:
+        model = ConferenceByYear
+        fields = ['id', 'year', 'schools', 'football', 'basketball', 'centerLat', 'centerLon', 'capital', 'avgDistanceFromCenter', 'avgDistanceBetweenSchools']
+    
+    def get_year(self, obj):
+        return obj.year.year

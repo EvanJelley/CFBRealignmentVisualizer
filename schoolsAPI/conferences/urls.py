@@ -1,7 +1,13 @@
 from django.urls import path
-from .views import ConferenceByYearList, ConferenceByYearDetail
+from .views import (
+    AllConferenceByYearList, 
+    ConferenceByYearDetail,
+    ConferenceByYearListSEC
+    )
+
 
 urlpatterns = [
-    path('conferencebyyear/', ConferenceByYearList.as_view()),
+    path('conferencebyyear/', AllConferenceByYearList.as_view()),
     path('conferencebyyear/<int:pk>/', ConferenceByYearDetail.as_view()),
+    path('conferencebyyear/sec/', ConferenceByYearListSEC.as_view())
 ]

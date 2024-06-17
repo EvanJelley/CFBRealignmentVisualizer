@@ -1,10 +1,4 @@
 from django.db import models
-
-class Conference(models.Model):
-    name = models.CharField(max_length=100)
-
-    def __str__(self):
-        return self.name
     
 class School(models.Model):
     name = models.CharField(max_length=100)
@@ -21,11 +15,41 @@ class Year(models.Model):
 
     def __str__(self):
         return str(self.year)
-    
-class ConferenceByYear(models.Model):
-    year = models.ForeignKey(Year, on_delete=models.CASCADE)
-    conference = models.ForeignKey(Conference, on_delete=models.CASCADE)
-    school = models.ManyToManyField(School)
-    
+
+class ConferenceName(models.Model):
+    name = models.CharField(max_length=100)
+
     def __str__(self):
-        return str(self.year.year) + '_' + self.conference.name
+        return self.name
+
+class MajorCity(models.Model):
+    name = models.CharField(max_length=100)
+    state = models.CharField(max_length=2)
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+
+    def __str__(self):
+        return self.name
+
+
+class ConferenceByYear(models.Model):
+    # BASIC INFO
+    year = models.ForeignKey(Year, on_delete=models.CASCADE)
+    schools = models.ManyToManyField(School)
+    conference = models.ForeignKey(ConferenceName, on_delete=models.CASCADE, null=True, blank=True)
+
+    # SPORTS
+    football = models.BooleanField(default=True)
+    basketball = models.BooleanField(default=True)
+
+    # GEOGRAPHY
+    centerLat = models.FloatField(null=True, blank=True)
+    centerLon = models.FloatField(null=True, blank=True)
+    capital = models.ForeignKey(MajorCity, on_delete=models.CASCADE, null=True, blank=True)
+    avgDistanceFromCenter = models.FloatField(null=True, blank=True)
+    avgDistanceBetweenSchools = models.FloatField(null=True, blank=True)
+
+    def __str__(self):
+        return str(self.year.year) + ' ' + self.conference.name
+
+

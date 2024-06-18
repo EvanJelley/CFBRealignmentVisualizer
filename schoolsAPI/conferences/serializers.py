@@ -17,10 +17,16 @@ class ConferenceNameSerializer(serializers.ModelSerializer):
         model = ConferenceName
         fields = ['id', 'name']
 
+class MajorCitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = School
+        fields = ['id', 'name', 'state', 'latitude', 'longitude']
+
 class AllConferenceByYearSerializer(serializers.ModelSerializer):
     year = serializers.SerializerMethodField()
     schools = SchoolSerializer(many=True)
     conference = serializers.SerializerMethodField()
+    capital = MajorCitySerializer()
 
     class Meta:
         model = ConferenceByYear
@@ -35,6 +41,7 @@ class AllConferenceByYearSerializer(serializers.ModelSerializer):
 class SpecificConferenceByYearSerializer(serializers.ModelSerializer):
     year = serializers.SerializerMethodField()
     schools = SchoolSerializer(many=True)
+    capital = MajorCitySerializer()
 
     class Meta:
         model = ConferenceByYear

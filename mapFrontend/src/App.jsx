@@ -3,7 +3,14 @@ import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 import axios from 'axios'
-
+import {
+  MapContainer,
+  TileLayer,
+  useMap,
+  Marker,
+  Popup
+} from 'react-leaflet'
+import 'leaflet/dist/leaflet.css';
 
 
 
@@ -59,13 +66,11 @@ function App() {
 
   let conferenceFilter = () => {
     if (selectedConference == 'All Conferences') {
-      console.log('All Conferences')
       let filteredList = conferenceList.filter((conference) => {
         return conference.year == selectedYear
       })
       setFilteredConferenceList(filteredList)
     } else {
-      console.log('Specific Conference')
       let filteredList = conferenceList.filter((conference) => {
         return conference.year == selectedYear && conference.conference == selectedConference
       })
@@ -85,25 +90,43 @@ function App() {
       });
       years.sort()
       setConferenceYears(years)
-      console.log(selectedYear, years)
+      conferenceFilter()
     } else {
-      console.log('Specific Conference')
       let years = []
+      console.log("selected: " + selectedConference)
       conferenceList.map((conference) => {
         conference.conference == selectedConference && !years.includes(conference.year) ? years.push(conference.year) : null
       });
       years.sort()
       setConferenceYears(years)
-      console.log(selectedYear, years)
-      years.includes(selectedYear) ? conferenceFilter() : setSelectedYear(years[0])
+      years.includes(Number(selectedYear)) ? conferenceFilter() : setSelectedYear(years[0])
     }
   }, [selectedConference])
 
+  useEffect(() => {
+    console.log(selectedConference)
+    console.log(selectedYear)
+  }, [selectedConference, selectedYear])
 
   return (
     <>
       <h1>Conference Realignment Map</h1>
       <OptionBay conferenceNames={conferenceNames} conferenceYears={conferenceYears} selectConference={selectConferenceHandler} selectYear={selectYearHandler} />
+      <MapContainer style={{ height: "60vh", width: "100%" }} center={[37.0902, -95.7129]} zoom={4} scrollWheelZoom={false}>
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        {filteredConferenceList.map((conference) =>
+          conference.schools.map((school) => (
+            <Marker position={[Number(school.latitude), Number(school.longitude)]}>
+              <Popup>
+                {school.name} - {school.city}, {school.state}
+              </Popup>
+            </Marker>
+          ))
+        )}
+      </MapContainer>
       <ul>
         {filteredConferenceList.map((conference) => (
           <li key={conference.id}>
@@ -118,7 +141,6 @@ function App() {
           </li>
         ))}
       </ul>
-      <Map conferenceList={filteredConferenceList} />
     </>
   )
 }
@@ -141,7 +163,8 @@ function OptionBay({ conferenceNames, conferenceYears, selectConference, selectY
   )
 }
 
-function Map ({ conferenceList }) {
+function Map({ conferenceList }) {
+  let map = L.map('map').setView([51.505, -0.09], 13);
   return (
     <div>
       <h1>Map</h1>

@@ -6,6 +6,7 @@ class School(models.Model):
     state = models.CharField(max_length=2)
     latitude = models.FloatField()
     longitude = models.FloatField()
+    logo = models.ImageField(upload_to='images/school_logos', null=True, blank=True)
 
     def __str__(self):
         return self.name

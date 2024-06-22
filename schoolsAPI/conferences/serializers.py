@@ -7,6 +7,12 @@ class SchoolSerializer(serializers.ModelSerializer):
         model = School
         fields = ['id', 'name', 'city', 'state', 'latitude', 'longitude']
 
+class SchoolWithLogoSerializer(serializers.ModelSerializer):
+    logo = serializers.ImageField()
+    class Meta:
+        model = School
+        fields = ['id', 'name', 'city', 'state', 'latitude', 'longitude', 'logo']
+
 class YearSerializer(serializers.ModelSerializer):
     class Meta:
         model = Year

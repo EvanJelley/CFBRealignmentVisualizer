@@ -20,6 +20,7 @@ function App() {
   const [conferenceList, setConferenceList] = useState([])
   const [filteredConferenceList, setFilteredConferenceList] = useState([])
   const [conferenceIcons, setConferenceIcons] = useState({})
+  const [schoolIcons, setSchoolIcons] = useState({})
 
   const [conferenceNames, setConferenceNames] = useState([])
   const [selectedConference, setSelectedConference] = useState('')
@@ -40,15 +41,8 @@ function App() {
       conferenceNameList.push('All Conferences')
       setConferenceNames(conferenceNameList)
 
-      let conferenceYearList = []
-      response.data.map((conference) => {
-        conferenceYearList.includes(conference.year) ? null :
-          conferenceYearList.push(conference.year)
-      });
-      conferenceYearList.sort()
-      setConferenceYears(conferenceYearList)
-
       setSelectedConference(conferenceNameList[0])
+
       const logoResponse = await axios.get('http://localhost:8000/api/conferencelogos/')
       let icons = {};
       logoResponse.data.forEach((logo) => {
@@ -63,8 +57,29 @@ function App() {
     }
   }
 
+
+  const getSchools = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/api/schoollogos/')
+      let icons = {};
+      response.data.forEach((school) => {
+        school.logo = school.logo || 'http://localhost:8000/media/images/school_logos/Block_M-Hex.png'
+        icons[school.name] = L.icon({
+          iconUrl: school.logo,
+          iconSize: [30,],
+        });
+      });
+      console.log(icons)
+      setSchoolIcons(icons);
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+
   useEffect(() => {
     getConferences()
+    getSchools()
   }, [])
 
   let selectConferenceHandler = (e) => {
@@ -156,7 +171,7 @@ function App() {
                   filteredConferenceList.map((conference) =>
                     conference.schools.map((school) => (
                       <Marker key={school.id} position={[Number(school.latitude), Number(school.longitude)]} 
-                      icon={conferenceIcons[selectedConference] || myIcon}>
+                      icon={schoolIcons[school.name] || myIcon}>
                         <Popup>
                           {school.name} - {school.city}, {school.state}
                         </Popup>
@@ -206,15 +221,6 @@ function OptionBay({ conferenceNames, conferenceYears, selectConference, selectY
         ))}
       </select>
     </>
-  )
-}
-
-function Map({ conferenceList }) {
-  let map = L.map('map').setView([51.505, -0.09], 13);
-  return (
-    <div>
-      <h1>Map</h1>
-    </div>
   )
 }
 

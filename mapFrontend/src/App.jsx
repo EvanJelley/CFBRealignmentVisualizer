@@ -20,7 +20,9 @@ function App() {
   const [conferenceList, setConferenceList] = useState([])
   const [filteredConferenceList, setFilteredConferenceList] = useState([])
   const [conferenceIcons, setConferenceIcons] = useState({})
+  const [conferenceLogos, setConferenceLogos] = useState({})
   const [schoolIcons, setSchoolIcons] = useState({})
+
 
   const [conferenceNames, setConferenceNames] = useState([])
   const [selectedConference, setSelectedConference] = useState('')
@@ -44,11 +46,18 @@ function App() {
       setSelectedConference(conferenceNameList[0])
 
       const logoResponse = await axios.get('http://localhost:8000/api/conferencelogos/')
+      let logos = {};
+      logoResponse.data.forEach((logo) => {
+        logos[logo.name] = logo.logo;
+      });
+      setConferenceLogos(logos);
       let icons = {};
       logoResponse.data.forEach((logo) => {
-        icons[logo.name] = L.icon({
-          iconUrl: logo.logo,
-          iconSize: [40,],
+        getImageDimmensions(logo.logo, 25).then((dimmensions) => {
+          icons[logo.name] = L.icon({
+            iconUrl: logo.logo,
+            iconSize: dimmensions
+          });
         });
       });
       setConferenceIcons(icons);
@@ -64,26 +73,44 @@ function App() {
       let icons = {};
       response.data.forEach((school) => {
         school.logo = school.logo || 'http://localhost:8000/media/images/school_logos/Block_M-Hex.png'
-        icons[school.name] = L.icon({
-          iconUrl: school.logo,
-          iconSize: [30,],
+        getImageDimmensions(school.logo, 18).then((dimmensions) => {
+          icons[school.name] = L.icon({
+            iconUrl: school.logo,
+            iconSize: dimmensions,
+          });
         });
       });
-      console.log(icons)
       setSchoolIcons(icons);
     } catch (error) {
       console.error(error)
     }
   }
 
+  const getImageDimmensions = (url, pixels) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.src = url;
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        let aspectRatio = width / height;
+        aspectRatio > 3 ? pixels *= .7 : null;
+        img.width > img.height ? resolve([Math.round(pixels * aspectRatio), pixels]) : resolve([pixels, Math.round(pixels / aspectRatio)]);
+      };
+      img.onerror = () => {
+        reject('error');
+      };
+    });
+  };
 
   useEffect(() => {
     getConferences()
     getSchools()
+    console.log('Full APP loaded')
   }, [])
 
   let selectConferenceHandler = (e) => {
-    setSelectedConference(e.target.value)
+    setSelectedConference(e.target.alt)
   }
 
   let selectYearHandler = (e) => {
@@ -149,9 +176,13 @@ function App() {
             <p>Loading...</p>
             :
             <div className='col-12'>
-              <OptionBay conferenceNames={conferenceNames} conferenceYears={conferenceYears} selectConference={selectConferenceHandler} selectYear={selectYearHandler} />
-              <MapContainer style={{ height: "24rem", width: "100%" }} center={[37.0902, -95.7129]} zoom={4} 
-              scrollWheelZoom={false} maxBounds={usaBounds} dragging={false} zoomControl={false}>
+              <OptionBay conferenceNames={conferenceNames}
+                conferenceYears={conferenceYears}
+                selectConference={selectConferenceHandler}
+                selectYear={selectYearHandler}
+                conferenceLogosObject={conferenceLogos} />
+              <MapContainer style={{ height: "24rem", width: "100%" }} center={[37.0902, -95.7129]} zoom={4}
+                scrollWheelZoom={false} maxBounds={usaBounds} dragging={false} zoomControl={false}>
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -159,8 +190,8 @@ function App() {
                 {selectedConference == 'All Conferences' ?
                   filteredConferenceList.map((conference) =>
                     conference.schools.map((school) => (
-                      <Marker key={school.id} position={[Number(school.latitude), Number(school.longitude)]} 
-                      icon={conferenceIcons[selectedConference] || myIcon}>
+                      <Marker key={school.id} position={[Number(school.latitude), Number(school.longitude)]}
+                        icon={conferenceIcons[conference.conference] || myIcon}>
                         <Popup>
                           {school.name} - {school.city}, {school.state}
                         </Popup>
@@ -170,8 +201,8 @@ function App() {
                   :
                   filteredConferenceList.map((conference) =>
                     conference.schools.map((school) => (
-                      <Marker key={school.id} position={[Number(school.latitude), Number(school.longitude)]} 
-                      icon={schoolIcons[school.name] || myIcon}>
+                      <Marker key={school.id} position={[Number(school.latitude), Number(school.longitude)]}
+                        icon={schoolIcons[school.name] || myIcon}>
                         <Popup>
                           {school.name} - {school.city}, {school.state}
                         </Popup>
@@ -179,7 +210,9 @@ function App() {
                     ))
                   )}
                 {filteredConferenceList.map((conference) => (
-                  <Marker key={conference.capital.id} position={[Number(conference.capital.latitude), Number(conference.capital.longitude)]}>
+                  <Marker key={conference.capital.id}
+                    position={[Number(conference.capital.latitude), Number(conference.capital.longitude)]}
+                    icon={conferenceIcons[conference.conference] || myIcon}>
                     <Popup>
                       Proposed {conference.conference} Capital: {conference.capital.name} - {conference.capital.state}
                     </Popup>
@@ -206,20 +239,32 @@ function App() {
   )
 }
 
-function OptionBay({ conferenceNames, conferenceYears, selectConference, selectYear }) {
+function OptionBay({ conferenceNames, conferenceYears, selectConference, selectYear, conferenceLogosObject }) {
   return (
     <>
       <h3>Option Bay</h3>
-      <select onChange={selectConference}>
+      {conferenceNames.length == 0 ? <p>Loading...</p> : null}
+      {conferenceYears.length == 0 ? <p>Loading...</p> : null}
+      <div>
+        {conferenceNames.map((conferenceName, index) => (
+          <button key={`${conferenceName}-${index}`} onClick={selectConference}>
+            <img src={conferenceLogosObject[conferenceName]} alt={conferenceName} style={{ width: '50px', height: '50px' }} />
+          </button>
+        ))}
+      </div>
+      {/* <select onChange={selectConference}>
         {conferenceNames.map((conferenceName) => (
           <option key={conferenceName}>{conferenceName}</option>
         ))}
-      </select>
+      </select> */}
       <select onChange={selectYear}>
         {conferenceYears.map((conferenceYear) => (
           <option key={conferenceYear}>{conferenceYear}</option>
         ))}
       </select>
+      {/* {conferenceNames.map((conferenceName) => (
+        console.log(conferenceName)
+      ))} */}
     </>
   )
 }

@@ -6,3 +6,4 @@ admin.site.register(School)
 admin.site.register(Year)
 admin.site.register(ConferenceByYear)
 admin.site.register(MajorCity)
+

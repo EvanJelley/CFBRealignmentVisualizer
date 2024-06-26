@@ -1,1 +1,18 @@
 #map { height: 180px; }
+
+.conference-buttons-bay {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.conference-selection-button {
+    height: 6rem;
+    width: 6rem;
+    margin: 0.5rem;
+}
+
+.conference-selection-img {
+    width: 3rem;
+}

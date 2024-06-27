@@ -57,27 +57,27 @@ function App() {
         logos[logo.name] = logo.logo;
       });
       setConferenceLogos(logos);
+
+      const confIconsPromises = logoResponse.data.map(async (logo) => {
+        const dimensions = await getImageDimmensions(logo.logo, CONFLOGOSIZE);
+        return { name: logo.name, icon: L.icon({ iconUrl: logo.logo, iconSize: dimensions }) };
+      });
+      const confIconsArray = await Promise.all(confIconsPromises);
       let confIcons = {};
-      logoResponse.data.forEach((logo) => {
-        getImageDimmensions(logo.logo, CONFLOGOSIZE).then((dimmensions) => {
-          confIcons[logo.name] = L.icon({
-            iconUrl: logo.logo,
-            iconSize: dimmensions
-          });
-        });
+      confIconsArray.forEach(item => {
+        confIcons[item.name] = item.icon;
       });
       setConferenceIcons(confIcons);
 
       const responseSchools = await axios.get(APIURL + '/api/schoollogos/')
+      const schoolIconsPromises = responseSchools.data.map(async (school) => {
+        const dimensions = await getImageDimmensions(school.logo, TEAMLOGOSIZE);
+        return { name: school.name, icon: L.icon({ iconUrl: school.logo, iconSize: dimensions }) };
+      });
+      const schoolIconsArray = await Promise.all(schoolIconsPromises);
       let schoolIcons = {};
-      responseSchools.data.forEach((school) => {
-        school.logo = school.logo
-        getImageDimmensions(school.logo, TEAMLOGOSIZE).then((dimmensions) => {
-          schoolIcons[school.name] = L.icon({
-            iconUrl: school.logo,
-            iconSize: dimmensions,
-          });
-        });
+      schoolIconsArray.forEach(item => {
+        schoolIcons[item.name] = item.icon;
       });
       setSchoolIcons(schoolIcons);
 
@@ -86,6 +86,7 @@ function App() {
       setHasError(true)
       console.error(error)
     } finally {
+      console.log('Finished Getting Conferences')
       setIsLoading(false)
     }
   }
@@ -165,11 +166,6 @@ function App() {
     iconSize: [10, 10],
   });
 
-  const usaBounds = [
-    [5.499550, -167.276413],
-    [83.162102, -52.233040]
-  ];
-
   return (
     <>
       <div className='container'>
@@ -183,56 +179,12 @@ function App() {
               selectConference={selectConferenceHandler}
               selectYear={selectYearHandler}
               conferenceLogosObject={conferenceLogos} />
-            <div className='row'>
-              <div className='col-12'>
-                <MapContainer style={{ height: "24rem", width: "100%" }} center={[37.0902, -95.7129]} zoom={4}
-                  scrollWheelZoom={false} maxBounds={usaBounds} dragging={false} zoomControl={false}>
-                  <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                  {selectedConference == 'NCAA' ?
-                    filteredConferenceList.map((conference) => conference.schools.map((school) => (
-                      <Marker key={`${school.name}-${school.id}`} position={[Number(school.latitude), Number(school.longitude)]}
-                        icon={conferenceIcons[conference.conference] || myIcon}>
-                        <Popup>
-                          {school.name} - {school.city}, {school.state}
-                        </Popup>
-                      </Marker>
-                    ))
-                    )
-                    :
-                    filteredConferenceList.map((conference) => conference.schools.map((school) => (
-                      <Marker key={`${school.name}-${school.id}`} position={[Number(school.latitude), Number(school.longitude)]}
-                        icon={schoolIcons[school.name] || myIcon}>
-                        <Popup>
-                          {school.name} - {school.city}, {school.state}
-                        </Popup>
-                      </Marker>
-                    ))
-                    )}
-                  {filteredConferenceList.map((conference) => (
-                    <Marker key={`${conference.capital.name}-${conference.id}`}
-                      position={[Number(conference.capital.latitude), Number(conference.capital.longitude)]}
-                      icon={conferenceIcons[conference.conference] || myIcon}>
-                      <Popup>
-                        Proposed {conference.conference} Capital: {conference.capital.name} - {conference.capital.state}
-                      </Popup>
-                    </Marker>
-                  ))}
-                </MapContainer>
-              </div>
-            </div><ul>
-              {filteredConferenceList.map((conference) => (
-                <li key={conference.id}>
-                  {conference.conference} - {conference.year}
-                  <ul>
-                    <li>Average School Distance from Center: {conference.avgDistanceFromCenter} miles</li>
-                    <li>Average Distance Between Schools: {conference.avgDistanceBetweenSchools} miles</li>
-                    <li>Proposed Capital: {conference.capital.name} - {conference.capital.state}</li>
-                  </ul>
-                </li>
-              ))}
-            </ul></>
+            <Map filteredConferenceList={filteredConferenceList}
+              conferenceIcons={conferenceIcons}
+              schoolIcons={schoolIcons}
+              selectedConference={selectedConference} />
+            <ConferenceDetails conference={filteredConferenceList[0]} />
+          </>
         }
       </div>
     </>
@@ -252,28 +204,54 @@ function OptionBay({ conferenceNames, conferenceYears, selectConference, selectY
               </button>
             ))}
           </div>
-          <DraggableDot x={0} y={0} />
+          <DraggableDot />
         </div>
       </div>
     </>
   )
 }
 
-const DraggableDot = ({ x, y, years }) => {
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+const DraggableDot = ({ years, setYear }) => {
+  const [position, setPosition] = useState({ x: 0, y: 0, percentPosition: 0});
   const lineDotRef = useRef(null);
   const [bounds, setBounds] = useState({ left: 0, right: 0, top: 0, bottom: 0 });
   const dotRadius = 10;
 
-  useEffect(() => {
+  const updateBounds = () => {
     if (!lineDotRef.current) return;
     const { width } = lineDotRef.current.getBoundingClientRect();
     setBounds({ left: 0, right: width - (dotRadius * 2), top: 0, bottom: 0 });
-  }, []);
+  };
 
+  useEffect(() => {
+
+    updateBounds();
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateBounds();
+    });
+
+    if (lineDotRef.current) {
+      resizeObserver.observe(lineDotRef.current);
+    }
+
+    // Clean up
+    return () => {
+      if (lineDotRef.current) {
+        resizeObserver.unobserve(lineDotRef.current);
+      }
+      resizeObserver.disconnect();
+    };
+  }, [dotRadius]);
+
+  useEffect(() => {
+    if (bounds.right === 0) return
+    let newPosition = { x: bounds.right * position.percentPosition, y: 0 };
+    setPosition(newPosition);
+  }, [bounds]);
 
   const dragFunction = (e, data) => {
-    setPosition({ x: data.x, y: 0 });
+    setPosition({ x: data.x, y: 0, percentPosition: data.x / bounds.right });
   }
 
   return (
@@ -335,6 +313,70 @@ const DraggableTimeline = ({ conferenceYears, selectYear, selectedYear }) => {
       </Draggable>
     </div>
   );
+};
+
+
+function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedConference }) {
+  const usaBounds = [
+    [5.499550, -167.276413],
+    [83.162102, -52.233040]
+  ];
+
+  return (
+    <div className='row'>
+      <div className='col-12'>
+        <MapContainer style={{ height: "23.5rem", width: "100%" }} center={[37.5, -95.7129]} zoom={4}
+          scrollWheelZoom={false} maxBounds={usaBounds} dragging={false} zoomControl={false}>
+          <TileLayer
+            attribution='&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            url='https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png'
+          />
+          {selectedConference == 'NCAA' ?
+            filteredConferenceList.map((conference) => conference.schools.map((school) => (
+              <Marker key={`${school.name}-${school.id}`} position={[Number(school.latitude), Number(school.longitude)]}
+                icon={conferenceIcons[conference.conference] || myIcon}>
+                <Popup>
+                  {school.name} - {school.city}, {school.state}
+                </Popup>
+              </Marker>
+            ))
+            )
+            :
+            filteredConferenceList.map((conference) => conference.schools.map((school) => (
+              <Marker key={`${school.name}-${school.id}`} position={[Number(school.latitude), Number(school.longitude)]}
+                icon={schoolIcons[school.name]}>
+                <Popup>
+                  {school.name} - {school.city}, {school.state}
+                </Popup>
+              </Marker>
+            ))
+            )}
+          {filteredConferenceList.map((conference) => (
+            <Marker key={`${conference.capital.name}-${conference.id}`}
+              position={[Number(conference.capital.latitude), Number(conference.capital.longitude)]}
+              icon={conferenceIcons[conference.conference]}>
+              <Popup>
+                Proposed {conference.conference} Capital: {conference.capital.name} - {conference.capital.state}
+              </Popup>
+            </Marker>
+          ))}
+        </MapContainer>
+      </div>
+    </div>
+  )
+};
+
+function ConferenceDetails({ conference }) {
+  return (
+    <div>
+      <h3>{conference.conference} - {conference.year}</h3>
+      <ul>
+        <li>Average School Distance from Center: {conference.avgDistanceFromCenter} miles</li>
+        <li>Average Distance Between Schools: {conference.avgDistanceBetweenSchools} miles</li>
+        <li>Proposed Capital: {conference.capital.name} - {conference.capital.state}</li>
+      </ul>
+    </div>
+  )
 };
 
 export default App

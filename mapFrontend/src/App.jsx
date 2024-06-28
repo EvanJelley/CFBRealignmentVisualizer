@@ -81,12 +81,12 @@ function App() {
       });
       setSchoolIcons(schoolIcons);
 
-      console.log('Getting Conferences...')
+      // console.log('Getting Conferences...')
     } catch (error) {
       setHasError(true)
       console.error(error)
     } finally {
-      console.log('Finished Getting Conferences')
+      // console.log('Finished Getting Conferences')
       setIsLoading(false)
     }
   }
@@ -115,7 +115,6 @@ function App() {
   let selectConferenceHandler = (e) => {
     const button = e.target.closest('button');
     const conferenceName = button.getAttribute('data-conf-name');
-    console.log(conferenceName)
     setSelectedConference(conferenceName)
   }
 
@@ -204,24 +203,38 @@ function OptionBay({ conferenceNames, conferenceYears, selectConference, selectY
               </button>
             ))}
           </div>
-          <DraggableDot />
+          <DraggableDot years={conferenceYears} setYear={selectYear} selectedYear={selectedYear} />
         </div>
       </div>
     </>
   )
 }
 
-const DraggableDot = ({ years, setYear }) => {
-  const [position, setPosition] = useState({ x: 0, y: 0, percentPosition: 0});
+const DraggableDot = ({ years, setYear, selectedYear }) => {
+  // console.log(years)
+
+  let yearRange = Math.abs(years[0] - years[years.length - 1]);
+  let testWidth = 0;
+
+  const [position, setPosition] = useState({ x: 0, y: 0, percentPosition: 0 });
   const lineDotRef = useRef(null);
-  const [bounds, setBounds] = useState({ left: 0, right: 0, top: 0, bottom: 0 });
-  const dotRadius = 10;
+  const [bounds, setBounds] = useState({ left: -100, right: 1000, top: 0, bottom: 0 });
+  const yearWidth = 50;
+
 
   const updateBounds = () => {
-    if (!lineDotRef.current) return;
-    const { width } = lineDotRef.current.getBoundingClientRect();
-    setBounds({ left: 0, right: width - (dotRadius * 2), top: 0, bottom: 0 });
+    if (!lineDotRef.current) return console.log('No ref');
+    let containerWidth = lineDotRef.current.clientWidth;
+    let totalYearsWidth = yearWidth * yearRange;
+    let leftBound = containerWidth - totalYearsWidth - yearWidth - (containerWidth / 2);
+    let rightBound = containerWidth / 2;
+    setBounds({ left: leftBound, right: rightBound, top: 0, bottom: 0 });
   };
+
+  useEffect(() => {
+    updateBounds();
+  }, [yearRange]);
+
 
   useEffect(() => {
 
@@ -235,48 +248,76 @@ const DraggableDot = ({ years, setYear }) => {
       resizeObserver.observe(lineDotRef.current);
     }
 
-    // Clean up
     return () => {
       if (lineDotRef.current) {
         resizeObserver.unobserve(lineDotRef.current);
       }
       resizeObserver.disconnect();
     };
-  }, [dotRadius]);
+  }, [lineDotRef.current]);
 
-  useEffect(() => {
-    if (bounds.right === 0) return
-    let newPosition = { x: bounds.right * position.percentPosition, y: 0 };
-    setPosition(newPosition);
-  }, [bounds]);
+  // useEffect(() => {
+  //   if (bounds.right === 0 || position.x === 0) return
+  //   let newPosition = { x: bounds.right * position.percentPosition, y: 0, percentPosition: position.percentPosition };
+  //   setPosition(newPosition);
+  // }, [bounds]);
 
-  const dragFunction = (e, data) => {
-    setPosition({ x: data.x, y: 0, percentPosition: data.x / bounds.right });
-  }
+  // const dragFunction = (e, data) => {
+  //   setPosition({ x: data.x, y: 0, percentPosition: data.x / bounds.right });
+  // }
+
+  // const dragFunction = (e, data) => {
+  //   setPosition({ x: data.x, y: 0 });
+  // }
+
 
   return (
-    <div className='line-dot'
-      ref={lineDotRef}
-      style={{
-        width: "100%",
-        border: '1px solid black'
-      }}>
-      <Draggable
-        position={position}
-        onDrag={dragFunction}
-        bounds={bounds}
-      >
+    <>
+      <div className='line-dot'
+        ref={lineDotRef}
+        style={{
+          width: "100%",
+          height: '30px',
+          border: '1px solid black',
+          overflow: 'hidden',
+        }}>
+        <Draggable axis="x" bounds={bounds} >
+          <div style={{ display: 'inline-block', overflow: 'hidden', whiteSpace: "nowrap" }}>
+            {
+              years.map((year, index) => (
+                <div
+                  key={year}
+                  style={{
+                    width: `${yearWidth}px`,
+                    height: '30px',
+                    display: 'inline-block',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'white',
+                    border: '1px solid #ccc',
+                  }}
+                >
+                  {year}
+                </div>
+              ))}
+          </div>
+        </Draggable >
+      </div >
+      <div className="yearSelectorTriangle">
         <div
+          className="triangle"
           style={{
-            width: String(dotRadius * 2) + 'px',
-            height: String(dotRadius * 2) + 'px',
-            background: 'red',
-            borderRadius: '50%',
-            cursor: 'grab',
+            width: 0,
+            height: 0,
+            margin: 'auto',
+            borderLeft: '10px solid transparent',
+            borderRight: '10px solid transparent',
+            borderBottom: '10px solid black',
+            position: 'relative',
           }}
-        />
-      </Draggable>
-    </div>
+        ></div>
+      </div>
+    </>
   );
 }
 
@@ -306,7 +347,7 @@ const DraggableTimeline = ({ conferenceYears, selectYear, selectedYear }) => {
                 border: '1px solid #ccc',
               }}
             >
-              {year}
+              {/* {year} */}
             </div>
           ))}
         </div>

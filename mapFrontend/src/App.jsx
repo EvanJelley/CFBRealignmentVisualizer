@@ -118,8 +118,8 @@ function App() {
     setSelectedConference(conferenceName)
   }
 
-  let selectYearHandler = (e) => {
-    setSelectedYear(e.target.value)
+  let selectYearHandler = (year) => {
+    setSelectedYear(year)
   }
 
   let conferenceFilter = () => {
@@ -177,7 +177,8 @@ function App() {
               conferenceYears={conferenceYears}
               selectConference={selectConferenceHandler}
               selectYear={selectYearHandler}
-              conferenceLogosObject={conferenceLogos} />
+              conferenceLogosObject={conferenceLogos}
+              selectedYear={selectedYear} />
             <Map filteredConferenceList={filteredConferenceList}
               conferenceIcons={conferenceIcons}
               schoolIcons={schoolIcons}
@@ -211,24 +212,23 @@ function OptionBay({ conferenceNames, conferenceYears, selectConference, selectY
 }
 
 const DraggableDot = ({ years, setYear, selectedYear }) => {
-  // console.log(years)
 
   let yearRange = Math.abs(years[0] - years[years.length - 1]);
-  let testWidth = 0;
 
-  const [position, setPosition] = useState({ x: 0, y: 0, percentPosition: 0 });
+  const nodeRef = useRef(null);
+  const [position, setPosition] = useState({ x: 0, y: 0, percentPosition: 0});
+  const [yearPosition, setYearPosition] = useState(0);
   const lineDotRef = useRef(null);
-  const [bounds, setBounds] = useState({ left: -100, right: 1000, top: 0, bottom: 0 });
+  const [bounds, setBounds] = useState({ left: -100, right: 100, top: 0, bottom: 0 });
   const yearWidth = 50;
 
 
   const updateBounds = () => {
     if (!lineDotRef.current) return console.log('No ref');
-    let containerWidth = lineDotRef.current.clientWidth;
     let totalYearsWidth = yearWidth * yearRange;
-    let leftBound = containerWidth - totalYearsWidth - yearWidth - (containerWidth / 2);
-    let rightBound = containerWidth / 2;
-    setBounds({ left: leftBound, right: rightBound, top: 0, bottom: 0 });
+    let leftBound = -(totalYearsWidth + yearWidth);
+    setBounds({ left: leftBound, right: 1, top: 0, bottom: 0 });
+    // setPosition({ x: 0, y: 0, percentPosition: 0 });
   };
 
   useEffect(() => {
@@ -256,20 +256,21 @@ const DraggableDot = ({ years, setYear, selectedYear }) => {
     };
   }, [lineDotRef.current]);
 
-  // useEffect(() => {
-  //   if (bounds.right === 0 || position.x === 0) return
-  //   let newPosition = { x: bounds.right * position.percentPosition, y: 0, percentPosition: position.percentPosition };
-  //   setPosition(newPosition);
-  // }, [bounds]);
+  const handleDrag = (e, data) => {
+    // const xMove = Math.abs(data.x);
+    // const newPostion = { x: data.x, y: 0, percentPosition: data.x/ bounds.left }
+    // console.log(newPostion)
+    // setPosition(newPostion);
 
-  // const dragFunction = (e, data) => {
-  //   setPosition({ x: data.x, y: 0, percentPosition: data.x / bounds.right });
-  // }
+    // Calculate the index based on the percentage position
+    const index = Math.floor((data.x/ bounds.left) * (years.length));
 
-  // const dragFunction = (e, data) => {
-  //   setPosition({ x: data.x, y: 0 });
-  // }
+    // Ensure the index is within the bounds of the years array
+    const safeIndex = index < 0 ? 0 : index >= years.length ? years.length - 1 : index;
 
+    // Call setYear with the year value directly
+    setYear(years[safeIndex]);
+  };
 
   return (
     <>
@@ -280,9 +281,11 @@ const DraggableDot = ({ years, setYear, selectedYear }) => {
           height: '30px',
           border: '1px solid black',
           overflow: 'hidden',
+          position: 'relative',
         }}>
-        <Draggable axis="x" bounds={bounds} >
-          <div style={{ display: 'inline-block', overflow: 'hidden', whiteSpace: "nowrap" }}>
+          {console.log("bounds", bounds)}
+        <Draggable axis="x" bounds={bounds} onDrag={handleDrag} defaultPosition={{ x: yearPosition, y: position.y}} nodeRef={nodeRef}>
+          <div style={{ display: 'inline-block', overflow: 'hidden', whiteSpace: "nowrap", position: "absolute", left: "50%" }} ref={nodeRef}>
             {
               years.map((year, index) => (
                 <div
@@ -293,7 +296,7 @@ const DraggableDot = ({ years, setYear, selectedYear }) => {
                     display: 'inline-block',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: 'white',
+                    background: selectedYear === year ? 'lightblue' : 'white',
                     border: '1px solid #ccc',
                   }}
                 >

@@ -6,16 +6,29 @@ import {
   TileLayer,
   useMap,
   Marker,
-  Popup
+  Popup,
 } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import Draggable from 'react-draggable';
 
-const APIURL = 'http://localhost:8000'
-const TEAMLOGOSIZE = 14
-const CONFLOGOSIZE = 22
+const vpWidth = window.innerWidth;
 
+const calculateTeamIconSize = () => {
+  if (vpWidth < 768) return 10;
+  if (vpWidth < 1500) return 14;
+  return 20;
+};
+
+const calculateConfIconSize = () => {
+  if (vpWidth < 768) return 14;
+  if (vpWidth < 1500) return 22;
+  return 30;
+};
+
+const APIURL = 'http://localhost:8000';
+const TEAMLOGOSIZE = calculateTeamIconSize();
+const CONFLOGOSIZE = calculateConfIconSize();
 
 
 function App() {
@@ -217,7 +230,6 @@ const DraggableDot = ({ years, setYear, selectedYear }) => {
 
   const nodeRef = useRef(null);
   const [position, setPosition] = useState({ x: 0, y: 0, percentPosition: 0});
-  const [yearPosition, setYearPosition] = useState(0);
   const lineDotRef = useRef(null);
   const [bounds, setBounds] = useState({ left: -100, right: 100, top: 0, bottom: 0 });
   const yearWidth = 50;
@@ -228,11 +240,12 @@ const DraggableDot = ({ years, setYear, selectedYear }) => {
     let totalYearsWidth = yearWidth * yearRange;
     let leftBound = -(totalYearsWidth + yearWidth);
     setBounds({ left: leftBound, right: 1, top: 0, bottom: 0 });
-    // setPosition({ x: 0, y: 0, percentPosition: 0 });
   };
 
   useEffect(() => {
     updateBounds();
+    const newX = -(selectedYear - years[0]) * yearWidth - yearWidth / 2;
+    setPosition({ x: newX, y: 0, percentPosition: newX / bounds.left });
   }, [yearRange]);
 
 
@@ -257,18 +270,11 @@ const DraggableDot = ({ years, setYear, selectedYear }) => {
   }, [lineDotRef.current]);
 
   const handleDrag = (e, data) => {
-    // const xMove = Math.abs(data.x);
-    // const newPostion = { x: data.x, y: 0, percentPosition: data.x/ bounds.left }
-    // console.log(newPostion)
-    // setPosition(newPostion);
+    const newPostion = { x: data.x, y: 0, percentPosition: data.x/ bounds.left }
+    setPosition(newPostion);
 
-    // Calculate the index based on the percentage position
     const index = Math.floor((data.x/ bounds.left) * (years.length));
-
-    // Ensure the index is within the bounds of the years array
     const safeIndex = index < 0 ? 0 : index >= years.length ? years.length - 1 : index;
-
-    // Call setYear with the year value directly
     setYear(years[safeIndex]);
   };
 
@@ -283,8 +289,7 @@ const DraggableDot = ({ years, setYear, selectedYear }) => {
           overflow: 'hidden',
           position: 'relative',
         }}>
-          {console.log("bounds", bounds)}
-        <Draggable axis="x" bounds={bounds} onDrag={handleDrag} defaultPosition={{ x: yearPosition, y: position.y}} nodeRef={nodeRef}>
+        <Draggable axis="x" bounds={bounds} onDrag={handleDrag} position={position} nodeRef={nodeRef}>
           <div style={{ display: 'inline-block', overflow: 'hidden', whiteSpace: "nowrap", position: "absolute", left: "50%" }} ref={nodeRef}>
             {
               years.map((year, index) => (
@@ -322,55 +327,71 @@ const DraggableDot = ({ years, setYear, selectedYear }) => {
       </div>
     </>
   );
-}
-
-const DraggableTimeline = ({ conferenceYears, selectYear, selectedYear }) => {
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-
-  const handleDrag = (e, data) => {
-    setPosition({ x: data.x, y: 0 });
-    // Determine the year based on the drag position
-    const index = Math.round(data.x / 50); // Assuming each year takes 50px of space
-    const newIndex = Math.max(0, Math.min(conferenceYears.length - 1, index));
-    selectYear(conferenceYears[newIndex]);
-  };
-
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', width: '100%', overflow: 'hidden' }}>
-      <Draggable axis="x" position={position} onDrag={handleDrag} bounds="parent">
-        <div style={{ display: 'flex' }}>
-          {conferenceYears.map((year, index) => (
-            <div
-              key={year}
-              style={{
-                padding: '10px',
-                width: '50px',
-                textAlign: 'center',
-                background: selectedYear === year ? 'lightblue' : 'white',
-                border: '1px solid #ccc',
-              }}
-            >
-              {/* {year} */}
-            </div>
-          ))}
-        </div>
-      </Draggable>
-    </div>
-  );
 };
 
 
 function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedConference }) {
-  const usaBounds = [
-    [5.499550, -167.276413],
-    [83.162102, -52.233040]
-  ];
+
+  const mapParams = {
+    center: [37.5, -95.7129],
+    zoom: 4,
+    scrollWheelZoom: false,
+    dragging: false,
+    zoomControl: false,
+    vpHeight: 50,
+  };
+
+  const mapRef = useRef(null);
+  const containerRef = useRef(null);
+
+  const calculateZoomLevel = () => {
+    if (vpWidth < 768) return 3;
+    if (vpWidth < 1500) return 4;
+    return 5;
+  };
+
+  const calculateHeight = () => {
+    if (vpWidth < 768) return 33;
+    if (vpWidth < 1500) return 50;
+    return 75;
+  };
+
+  const handleResize = () => {
+    console.log("here")
+    if (mapRef.current) {
+      console.log("Resizing map")
+      const { current: map } = mapRef;
+      const zoom = calculateZoomLevel();
+      map.setView([0, 0], zoom);
+    }
+  };
+
+  useEffect(() => {
+    const observer = new ResizeObserver(handleResize);
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+    handleResize(); // Initial call to set the map view
+
+    return () => {
+      if (containerRef.current) {
+        observer.unobserve(containerRef.current);
+      }
+    };
+  }, []);
+
 
   return (
     <div className='row'>
-      <div className='col-12'>
-        <MapContainer style={{ height: "23.5rem", width: "100%" }} center={[37.5, -95.7129]} zoom={4}
-          scrollWheelZoom={false} maxBounds={usaBounds} dragging={false} zoomControl={false}>
+      <div className='col-12' ref={containerRef}> 
+        <MapContainer
+          center={[37.8, -96]}
+          zoom={calculateZoomLevel()}
+          style={{ height: `${calculateHeight()}vh`, width: '100%' }}
+          scrollWheelZoom={mapParams.scrollWheelZoom}
+          dragging={mapParams.dragging}
+          zoomControl={mapParams.zoomControl}
+          whenCreated={(mapInstance) => { mapRef.current = mapInstance; handleResize(); }}>
           <TileLayer
             attribution='&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>'
             url='https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png'
@@ -424,3 +445,17 @@ function ConferenceDetails({ conference }) {
 };
 
 export default App
+
+
+// center={mapParams.center} 
+// zoom={mapParams.zoom}
+// scrollWheelZoom={mapParams.scrollWheelZoom} 
+// maxBounds={mapParams.maxBounds} 
+// dragging={mapParams.dragging} 
+// zoomControl={mapParams.zoomControl} 
+// ref={mapRef}
+
+// const usaBounds = [
+//   [5.499550, -167.276413],
+//   [83.162102, -52.233040]
+// ];

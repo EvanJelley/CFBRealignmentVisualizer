@@ -1,4 +1,6 @@
-#map { height: 180px; }
+#mapcontainer { 
+    height: 23.5rem;
+}
 
 .conference-buttons-bay {
     margin-top: 1rem;

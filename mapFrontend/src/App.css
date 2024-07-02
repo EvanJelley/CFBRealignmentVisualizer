@@ -18,3 +18,11 @@
 .conference-selection-img {
     width: 3rem;
 }
+
+.leaflet-control-attribution {
+    font-size: 5px;
+}
+
+.hawaii-map-overlay .leaflet-control-attribution {
+    display: none;
+}

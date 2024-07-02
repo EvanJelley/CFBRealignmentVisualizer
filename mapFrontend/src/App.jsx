@@ -46,6 +46,8 @@ function App() {
   const [selectedConference, setSelectedConference] = useState('')
   const [conferenceYears, setConferenceYears] = useState([])
   const [selectedYear, setSelectedYear] = useState('')
+  const [sport, setSport] = useState('football')
+  const [splitConference, setSplitConference] = useState(false)
 
 
   const getConferences = async () => {
@@ -125,6 +127,21 @@ function App() {
     getConferences()
   }, [])
 
+  const sportHandler = (e) => {
+    const button = e.target.closest('button');
+    const sport = button.textContent.toLowerCase();
+    setSport(sport)
+  }
+
+  const splitConferenceMonitor = () => {
+    let split = false;
+    filteredConferenceList.map((conference) => {
+      conference.football && conference.basketball ? null : split = true
+    });
+    setSplitConference(split)
+    console.log('Split Conference:', split)
+  }
+
   let selectConferenceHandler = (e) => {
     const button = e.target.closest('button');
     const conferenceName = button.getAttribute('data-conf-name');
@@ -136,22 +153,37 @@ function App() {
   }
 
   let conferenceFilter = () => {
-    if (selectedConference == 'NCAA') {
-      let filteredList = conferenceList.filter((conference) => {
-        return conference.year == selectedYear
-      })
-      setFilteredConferenceList(filteredList)
+    if (sport == 'football') {
+      if (selectedConference == 'NCAA') {
+        let filteredList = conferenceList.filter((conference) => {
+          return conference.year == selectedYear && conference.football
+        })
+        setFilteredConferenceList(filteredList)
+      } else {
+        let filteredList = conferenceList.filter((conference) => {
+          return conference.year == selectedYear && conference.conference == selectedConference && conference.football
+        })
+        setFilteredConferenceList(filteredList)
+      };
     } else {
-      let filteredList = conferenceList.filter((conference) => {
-        return conference.year == selectedYear && conference.conference == selectedConference
-      })
-      setFilteredConferenceList(filteredList)
-    };
+      if (selectedConference == 'NCAA') {
+        let filteredList = conferenceList.filter((conference) => {
+          return conference.year == selectedYear && conference.basketball
+        })
+        setFilteredConferenceList(filteredList)
+      } else {
+        let filteredList = conferenceList.filter((conference) => {
+          return conference.year == selectedYear && conference.conference == selectedConference && conference.basketball
+        })
+        setFilteredConferenceList(filteredList)
+      };
+    }
+    splitConferenceMonitor()
   }
 
   useEffect(() => {
     conferenceFilter()
-  }, [selectedYear])
+  }, [selectedYear, sport])
 
   useEffect(() => {
     if (selectedConference == 'NCAA') {
@@ -191,7 +223,9 @@ function App() {
               selectConference={selectConferenceHandler}
               selectYear={selectYearHandler}
               conferenceLogosObject={conferenceLogos}
-              selectedYear={selectedYear} />
+              selectedYear={selectedYear}
+              sportHandler={sportHandler}
+              splitConference={splitConference} />
             <Map filteredConferenceList={filteredConferenceList}
               conferenceIcons={conferenceIcons}
               schoolIcons={schoolIcons}
@@ -204,12 +238,11 @@ function App() {
   )
 }
 
-function OptionBay({ conferenceNames, conferenceYears, selectConference, selectYear, conferenceLogosObject, selectedYear }) {
+function OptionBay({ conferenceNames, conferenceYears, selectConference, selectYear, conferenceLogosObject, selectedYear, sportHandler, splitConference }) {
   return (
     <>
       <div className='row'>
         <div className='col-12'>
-          <h3>Option Bay</h3>
           <div className='conference-buttons-bay'>
             {conferenceNames.map((conferenceName) => (
               <button key={conferenceName} onClick={selectConference} data-conf-name={conferenceName} className='conference-selection-button'>
@@ -217,6 +250,12 @@ function OptionBay({ conferenceNames, conferenceYears, selectConference, selectY
               </button>
             ))}
           </div>
+          {splitConference ?
+            <div className='sport-buttons-bay'>
+              <button onClick={sportHandler} className='sport-selection-button'>Basketball</button>
+              <button onClick={sportHandler} className='sport-selection-button'>Football</button>
+            </div>
+            : null}
           <DraggableDot years={conferenceYears} setYear={selectYear} selectedYear={selectedYear} />
         </div>
       </div>
@@ -229,7 +268,7 @@ const DraggableDot = ({ years, setYear, selectedYear }) => {
   let yearRange = Math.abs(years[0] - years[years.length - 1]);
 
   const nodeRef = useRef(null);
-  const [position, setPosition] = useState({ x: 0, y: 0, percentPosition: 0});
+  const [position, setPosition] = useState({ x: 0, y: 0, percentPosition: 0 });
   const lineDotRef = useRef(null);
   const [bounds, setBounds] = useState({ left: -100, right: 100, top: 0, bottom: 0 });
   const yearWidth = 50;
@@ -270,10 +309,10 @@ const DraggableDot = ({ years, setYear, selectedYear }) => {
   }, [lineDotRef.current]);
 
   const handleDrag = (e, data) => {
-    const newPostion = { x: data.x, y: 0, percentPosition: data.x/ bounds.left }
+    const newPostion = { x: data.x, y: 0, percentPosition: data.x / bounds.left }
     setPosition(newPostion);
 
-    const index = Math.floor((data.x/ bounds.left) * (years.length));
+    const index = Math.floor((data.x / bounds.left) * (years.length));
     const safeIndex = index < 0 ? 0 : index >= years.length ? years.length - 1 : index;
     setYear(years[safeIndex]);
   };
@@ -329,15 +368,17 @@ const DraggableDot = ({ years, setYear, selectedYear }) => {
   );
 };
 
-
 function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedConference }) {
 
+
+  console.log(filteredConferenceList)
   const mapParams = {
     center: [37.5, -95.7129],
     zoom: 4,
     scrollWheelZoom: false,
     dragging: false,
     zoomControl: false,
+    doubleClickZoom: false,
     vpHeight: 50,
   };
 
@@ -357,7 +398,6 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
   };
 
   const handleResize = () => {
-    console.log("here")
     if (mapRef.current) {
       console.log("Resizing map")
       const { current: map } = mapRef;
@@ -371,7 +411,7 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
     if (containerRef.current) {
       observer.observe(containerRef.current);
     }
-    handleResize(); // Initial call to set the map view
+    handleResize();
 
     return () => {
       if (containerRef.current) {
@@ -383,7 +423,7 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
 
   return (
     <div className='row'>
-      <div className='col-12' ref={containerRef}> 
+      <div className='col-12' ref={containerRef}>
         <MapContainer
           center={[37.8, -96]}
           zoom={calculateZoomLevel()}
@@ -391,6 +431,7 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
           scrollWheelZoom={mapParams.scrollWheelZoom}
           dragging={mapParams.dragging}
           zoomControl={mapParams.zoomControl}
+          doubleClickZoom={mapParams.doubleClickZoom}
           whenCreated={(mapInstance) => { mapRef.current = mapInstance; handleResize(); }}>
           <TileLayer
             attribution='&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>'
@@ -399,7 +440,7 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
           {selectedConference == 'NCAA' ?
             filteredConferenceList.map((conference) => conference.schools.map((school) => (
               <Marker key={`${school.name}-${school.id}`} position={[Number(school.latitude), Number(school.longitude)]}
-                icon={conferenceIcons[conference.conference] || myIcon}>
+                icon={conferenceIcons[conference.conference] || myIcon} zIndexOffset={1000}>
                 <Popup>
                   {school.name} - {school.city}, {school.state}
                 </Popup>
@@ -409,7 +450,7 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
             :
             filteredConferenceList.map((conference) => conference.schools.map((school) => (
               <Marker key={`${school.name}-${school.id}`} position={[Number(school.latitude), Number(school.longitude)]}
-                icon={schoolIcons[school.name]}>
+                icon={schoolIcons[school.name]} zIndexOffset={1000}>
                 <Popup>
                   {school.name} - {school.city}, {school.state}
                 </Popup>
@@ -419,16 +460,60 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
           {filteredConferenceList.map((conference) => (
             <Marker key={`${conference.capital.name}-${conference.id}`}
               position={[Number(conference.capital.latitude), Number(conference.capital.longitude)]}
-              icon={conferenceIcons[conference.conference]}>
+              icon={conferenceIcons[conference.conference]} zIndexOffset={500}>
               <Popup>
                 Proposed {conference.conference} Capital: {conference.capital.name} - {conference.capital.state}
               </Popup>
             </Marker>
           ))}
+          {filteredConferenceList.map((conference) => (conference.schools.map((school) => (
+            school.name.includes('Hawai') ? <HawaiiMapOverlay school={school} schoolIcons={schoolIcons} /> : null)
+          )))}
         </MapContainer>
       </div>
     </div>
   )
+};
+
+const HawaiiMapOverlay = ({ school, schoolIcons }) => {
+  const hawaiiCenter = [20.7984, -157]; // Center coordinates for Hawaii
+
+  const calculateHeight = () => {
+    if (vpWidth < 768) return 12;
+    if (vpWidth < 1500) return 12;
+    return 37;
+  };
+
+  const calculateWidth = () => {
+    if (vpWidth < 768) return 12;
+    if (vpWidth < 1500) return 12;
+    return 37;
+  }
+
+  const calculateZoomLevel = () => {
+    if (vpWidth < 768) return 4;
+    if (vpWidth < 1500) return 4;
+    return 6;
+  };
+
+  return (
+    <MapContainer
+      className='hawaii-map-overlay'
+      center={hawaiiCenter}
+      zoom={calculateZoomLevel()}
+      style={{ height: `${calculateHeight()}vh`, width: `${calculateWidth()}vw`, position: 'absolute', bottom: '10px', left: '10px', zIndex: 1000 }}
+      scrollWheelZoom={false}
+      dragging={false}
+      zoomControl={false}
+      doubleClickZoom={false}
+    >
+      <TileLayer
+        url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' id='HawaiiAttribution'
+      />
+      <Marker key={school.id} position={[Number(school.latitude), Number(school.longitude)]} icon={schoolIcons[school.name]}>
+      </Marker>
+    </MapContainer>
+  );
 };
 
 function ConferenceDetails({ conference }) {

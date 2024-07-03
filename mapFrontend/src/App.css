@@ -17,6 +17,7 @@
 
 .conference-selection-img {
     width: 3rem;
+    height: auto;
 }
 
 .leaflet-control-attribution {

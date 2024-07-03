@@ -139,7 +139,6 @@ function App() {
       conference.football && conference.basketball ? null : split = true
     });
     setSplitConference(split)
-    console.log('Split Conference:', split)
   }
 
   let selectConferenceHandler = (e) => {
@@ -212,28 +211,33 @@ function App() {
 
   return (
     <>
-      <div className='container'>
-        <h1>Conference Realignment Map</h1>
-        {isLoading ?
-          <p>Loading...</p>
-          :
-          <>
-            <OptionBay conferenceNames={conferenceNames}
-              conferenceYears={conferenceYears}
-              selectConference={selectConferenceHandler}
-              selectYear={selectYearHandler}
-              conferenceLogosObject={conferenceLogos}
-              selectedYear={selectedYear}
-              sportHandler={sportHandler}
-              splitConference={splitConference} />
-            <Map filteredConferenceList={filteredConferenceList}
-              conferenceIcons={conferenceIcons}
-              schoolIcons={schoolIcons}
-              selectedConference={selectedConference} />
-            <ConferenceDetails conference={filteredConferenceList[0]} />
-          </>
-        }
-      </div>
+      {isLoading ?
+        <p>Loading...</p>
+        :
+        <>
+          <NavBar conferenceNames={conferenceNames}
+            conferenceYears={conferenceYears}
+            selectConference={selectConferenceHandler}
+            selectYear={selectYearHandler}
+            conferenceLogosObject={conferenceLogos}
+            selectedYear={selectedYear}
+            sportHandler={sportHandler}
+            splitConference={splitConference} />
+          <OptionBay conferenceNames={conferenceNames}
+            conferenceYears={conferenceYears}
+            selectConference={selectConferenceHandler}
+            selectYear={selectYearHandler}
+            conferenceLogosObject={conferenceLogos}
+            selectedYear={selectedYear}
+            sportHandler={sportHandler}
+            splitConference={splitConference} />
+          <Map filteredConferenceList={filteredConferenceList}
+            conferenceIcons={conferenceIcons}
+            schoolIcons={schoolIcons}
+            selectedConference={selectedConference} />
+          <ConferenceDetails conference={filteredConferenceList[0]} />
+        </>
+      }
     </>
   )
 }
@@ -243,25 +247,112 @@ function OptionBay({ conferenceNames, conferenceYears, selectConference, selectY
     <>
       <div className='row'>
         <div className='col-12'>
-          <div className='conference-buttons-bay'>
-            {conferenceNames.map((conferenceName) => (
-              <button key={conferenceName} onClick={selectConference} data-conf-name={conferenceName} className='conference-selection-button'>
-                <img src={conferenceLogosObject[conferenceName]} alt={conferenceName} className='conference-selection-img' />
-              </button>
-            ))}
-          </div>
-          {splitConference ?
+          {/* {splitConference ?
             <div className='sport-buttons-bay'>
               <button onClick={sportHandler} className='sport-selection-button'>Basketball</button>
               <button onClick={sportHandler} className='sport-selection-button'>Football</button>
             </div>
-            : null}
+            : null} */}
           <DraggableDot years={conferenceYears} setYear={selectYear} selectedYear={selectedYear} />
         </div>
       </div>
     </>
   )
 }
+
+function NavBar({ conferenceNames, conferenceYears, selectConference, selectYear, conferenceLogosObject, selectedYear, sportHandler, splitConference }) {
+
+  return (
+    <>
+      {/* Navbar */}
+      <nav className="navbar navbar-expand-lg bg-primary navbar-dark " >
+        {/* Container wrapper */}
+        <div className="container-fluid">
+
+          {/* Navbar brand */}
+          < a className="navbar-brand" href="#"> CFB Realignment Map</a >
+
+          {/* Toggle button */}
+          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <i className="fas fa-bars">Menu</i>
+          </button >
+        </div>
+
+        {/* Collapsible wrapper */}
+        <div className="collapse navbar-collapse" id="navbarSupportedContent" >
+          <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+
+            {/* Link */}
+            <li className="nav-item">
+              <a className="nav-link" href="#">About</a>
+            </li>
+
+            {/* Dropdown */}
+            <li className="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Conferences
+              </a>
+              {/* Dropdown menu */}
+              <ul className="dropdown-menu" aria-labelledby="navbarDropdown">
+                <ul className='list-inline'>
+                  {conferenceNames.map((conferenceName) => (
+                    <li key={conferenceName} className='list-inline-item'>
+                      <button style={{ height: "3.5rem" }} onClick={selectConference} data-conf-name={conferenceName} className='dropdown-item'>
+                        <img src={conferenceLogosObject[conferenceName]} alt={conferenceName}
+                          className='conference-selection-img' />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </ul>
+            </li>
+
+            <li className="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Sports
+              </a>
+              <ul className="dropdown-menu" aria-labelledby="navbarDropdown">
+                <ul>
+                  <li key={'football'} className='dropdown-item'>
+                    <button onClick={sportHandler} className='dropdown-item'>
+                      Football
+                    </button>
+                  </li>
+                  <li key={'basketball'} className='dropdown-item'>
+                    <button onClick={sportHandler} className='dropdown-item'>
+                      Basketball
+                    </button>
+                  </li>
+                </ul>
+              </ul>
+            </li>
+
+          </ul>
+
+          {/* Icons */}
+          <ul className="navbar-nav d-flex flex-row me-1">
+            <li className="nav-item me-3 me-lg-0">
+              <a className="nav-link" href="#"><i className="fas fa-shopping-cart"></i></a>
+            </li>
+            <li className="nav-item me-3 me-lg-0">
+              <a className="nav-link" href="#"><i className="fab fa-twitter"></i></a>
+            </li>
+          </ul>
+
+          {/* Search */}
+          <form className="w-auto">
+            <input type="search" className="form-control" placeholder="Type a Year" aria-label="Search" />
+          </form>
+        </div >
+        {/* Container wrapper */}
+      </nav >
+    </>
+  )
+}
+
 
 const DraggableDot = ({ years, setYear, selectedYear }) => {
 

@@ -264,58 +264,40 @@ function NavBar({ conferenceNames, conferenceYears, selectConference, selectYear
 
   return (
     <>
-      {/* Navbar */}
       <nav className="navbar navbar-expand-lg bg-primary navbar-dark " >
-        {/* Container wrapper */}
         <div className="container-fluid">
-
-          {/* Navbar brand */}
           < a className="navbar-brand" href="#"> CFB Realignment Map</a >
-
-          {/* Toggle button */}
           <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
             aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <i className="fas fa-bars">Menu</i>
           </button >
-        </div>
-
-        {/* Collapsible wrapper */}
-        <div className="collapse navbar-collapse" id="navbarSupportedContent" >
-          <ul className="navbar-nav me-auto mb-2 mb-lg-0">
-
-            {/* Link */}
-            <li className="nav-item">
-              <a className="nav-link" href="#">About</a>
-            </li>
-
-            {/* Dropdown */}
-            <li className="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
-                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                Conferences
-              </a>
-              {/* Dropdown menu */}
-              <ul className="dropdown-menu" aria-labelledby="navbarDropdown">
-                <ul className='list-inline'>
+          <div className="collapse navbar-collapse" id="navbarSupportedContent" >
+            <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+              <li className="nav-item">
+                <a className="nav-link" href="#">About</a>
+              </li>
+              <li className="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Conferences
+                </a>
+                <ul className="dropdown-menu list-inline" aria-labelledby="navbarDropdown">
                   {conferenceNames.map((conferenceName) => (
                     <li key={conferenceName} className='list-inline-item'>
-                      <button style={{ height: "3.5rem" }} onClick={selectConference} data-conf-name={conferenceName} className='dropdown-item'>
+                      <button style={{ height: "3.7rem" }} onClick={selectConference} data-conf-name={conferenceName} className='dropdown-item'>
                         <img src={conferenceLogosObject[conferenceName]} alt={conferenceName}
                           className='conference-selection-img' />
                       </button>
                     </li>
                   ))}
                 </ul>
-              </ul>
-            </li>
-
-            <li className="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
-                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                Sports
-              </a>
-              <ul className="dropdown-menu" aria-labelledby="navbarDropdown">
-                <ul>
+              </li>
+              <li className="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Sports
+                </a>
+                <ul className="dropdown-menu" aria-labelledby="navbarDropdown">
                   <li key={'football'} className='dropdown-item'>
                     <button onClick={sportHandler} className='dropdown-item'>
                       Football
@@ -327,12 +309,12 @@ function NavBar({ conferenceNames, conferenceYears, selectConference, selectYear
                     </button>
                   </li>
                 </ul>
-              </ul>
-            </li>
+              </li>
 
-          </ul>
+            </ul>
+          </div>
 
-          {/* Icons */}
+          {/* Icons --- ADD GITHUB */}
           <ul className="navbar-nav d-flex flex-row me-1">
             <li className="nav-item me-3 me-lg-0">
               <a className="nav-link" href="#"><i className="fas fa-shopping-cart"></i></a>

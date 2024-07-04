@@ -2,21 +2,21 @@
     height: 23.5rem;
 }
 
-.conference-buttons-bay {
+/* .conference-buttons-bay {
     margin-top: 1rem;
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
-}
+} */
 
-.conference-selection-button {
+/* .conference-selection-button {
     height: 6rem;
     width: 6rem;
     margin: 0.5rem;
-}
+} */
 
 .conference-selection-img {
-    width: 3rem;
+    width: 2.5rem;
     height: auto;
 }
 
@@ -26,4 +26,14 @@
 
 .hawaii-map-overlay .leaflet-control-attribution {
     display: none;
+}
+
+/* Nav Styles */
+.dropdown-item {
+    margin: 0;
+    padding: 0.5rem 1rem;
+}
+
+.dropdown-menu {
+    width: 26rem;
 }

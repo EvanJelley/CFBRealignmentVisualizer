@@ -30,6 +30,10 @@ const APIURL = 'http://localhost:8000';
 const TEAMLOGOSIZE = calculateTeamIconSize();
 const CONFLOGOSIZE = calculateConfIconSize();
 
+const footballImage = "/images/football.png";
+const basketballImage = "/images/basketball.png";
+const githubLogo = "/images/github.png";
+
 
 function App() {
 
@@ -40,6 +44,7 @@ function App() {
   const [conferenceIcons, setConferenceIcons] = useState({})
   const [conferenceLogos, setConferenceLogos] = useState({})
   const [schoolIcons, setSchoolIcons] = useState({})
+  const [animate, setAnimate] = useState(false)
 
 
   const [conferenceNames, setConferenceNames] = useState([])
@@ -96,12 +101,10 @@ function App() {
       });
       setSchoolIcons(schoolIcons);
 
-      // console.log('Getting Conferences...')
     } catch (error) {
       setHasError(true)
       console.error(error)
     } finally {
-      // console.log('Finished Getting Conferences')
       setIsLoading(false)
     }
   }
@@ -129,7 +132,7 @@ function App() {
 
   const sportHandler = (e) => {
     const button = e.target.closest('button');
-    const sport = button.textContent.toLowerCase();
+    const sport = button.textContent.toLowerCase().trim();
     setSport(sport)
   }
 
@@ -149,6 +152,12 @@ function App() {
 
   let selectYearHandler = (year) => {
     setSelectedYear(year)
+  }
+
+  const yearSearch = (e) => {
+    let year = e.target.value;
+    year.length == 4 && !isNaN(year) && year >= conferenceYears[0] && year <= conferenceYears[conferenceYears.length - 1]
+      ? setSelectedYear(year) : null
   }
 
   let conferenceFilter = () => {
@@ -204,6 +213,20 @@ function App() {
     }
   }, [selectedConference])
 
+  const animationHandler = () => {
+    setAnimate(!animate)
+  }
+
+  useEffect(() => {
+    if (animate) {
+      setTimeout(() => {
+        setSelectedYear(selectedYear + 1)
+      }, 1000)
+    } else {
+      clearTimeout()
+    }
+  }, [animate])
+
   var myIcon = L.icon({
     iconUrl: APIURL + '/media/images/conf_logos/ncaa.png',
     iconSize: [10, 10],
@@ -218,11 +241,12 @@ function App() {
           <NavBar conferenceNames={conferenceNames}
             conferenceYears={conferenceYears}
             selectConference={selectConferenceHandler}
-            selectYear={selectYearHandler}
+            searchYears={yearSearch}
             conferenceLogosObject={conferenceLogos}
             selectedYear={selectedYear}
             sportHandler={sportHandler}
-            splitConference={splitConference} />
+            splitConference={splitConference} 
+            setAnimation={animationHandler}/>
           <OptionBay conferenceNames={conferenceNames}
             conferenceYears={conferenceYears}
             selectConference={selectConferenceHandler}
@@ -260,14 +284,14 @@ function OptionBay({ conferenceNames, conferenceYears, selectConference, selectY
   )
 }
 
-function NavBar({ conferenceNames, conferenceYears, selectConference, selectYear, conferenceLogosObject, selectedYear, sportHandler, splitConference }) {
+function NavBar({ conferenceNames, conferenceYears, selectConference, searchYears, conferenceLogosObject, selectedYear, sportHandler, splitConference, setAnimation}) {
 
   return (
     <>
       <nav className="navbar navbar-expand-lg bg-primary navbar-dark " >
         <div className="container-fluid">
           < a className="navbar-brand" href="#"> CFB Realignment Map</a >
-          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+          <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
             aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <i className="fas fa-bars">Menu</i>
           </button >
@@ -277,11 +301,11 @@ function NavBar({ conferenceNames, conferenceYears, selectConference, selectYear
                 <a className="nav-link" href="#">About</a>
               </li>
               <li className="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                <a className="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                   Conferences
                 </a>
-                <ul className="dropdown-menu list-inline" aria-labelledby="navbarDropdown">
+                <ul className="dropdown-menu list-inline dropdown-menu-conferences" aria-labelledby="navbarDropdown">
                   {conferenceNames.map((conferenceName) => (
                     <li key={conferenceName} className='list-inline-item'>
                       <button style={{ height: "3.7rem" }} onClick={selectConference} data-conf-name={conferenceName} className='dropdown-item'>
@@ -293,31 +317,36 @@ function NavBar({ conferenceNames, conferenceYears, selectConference, selectYear
                 </ul>
               </li>
               <li className="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                <a className="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                   Sports
                 </a>
                 <ul className="dropdown-menu" aria-labelledby="navbarDropdown">
                   <li key={'football'} className='dropdown-item'>
                     <button onClick={sportHandler} className='dropdown-item'>
-                      Football
+                      <img src={footballImage} alt='football' className='sport-selection-img' /> Football
                     </button>
                   </li>
                   <li key={'basketball'} className='dropdown-item'>
                     <button onClick={sportHandler} className='dropdown-item'>
-                      Basketball
+                      <img src={basketballImage} alt='basketball' className='sport-selection-img' /> Basketball
                     </button>
                   </li>
                 </ul>
               </li>
-
+              <li className="nav-item">
+                <button className='nav-link' onClick={setAnimation}>Animate</button>
+              </li>
+                
             </ul>
           </div>
 
           {/* Icons --- ADD GITHUB */}
           <ul className="navbar-nav d-flex flex-row me-1">
             <li className="nav-item me-3 me-lg-0">
-              <a className="nav-link" href="#"><i className="fas fa-shopping-cart"></i></a>
+              <a className="nav-link" href="https://github.com/EvanJelley/CFBRealignmentVisualizer" target="_blank" rel="noopener noreferrer">
+                <img src={githubLogo} alt='GitHub' className='navbar-logo' />
+              </a>
             </li>
             <li className="nav-item me-3 me-lg-0">
               <a className="nav-link" href="#"><i className="fab fa-twitter"></i></a>
@@ -325,7 +354,11 @@ function NavBar({ conferenceNames, conferenceYears, selectConference, selectYear
           </ul>
 
           {/* Search */}
-          <form className="w-auto">
+          <form className="w-auto" onChange={searchYears} onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+            }
+          }}>
             <input type="search" className="form-control" placeholder="Type a Year" aria-label="Search" />
           </form>
         </div >
@@ -343,6 +376,8 @@ const DraggableDot = ({ years, setYear, selectedYear }) => {
   const nodeRef = useRef(null);
   const [position, setPosition] = useState({ x: 0, y: 0, percentPosition: 0 });
   const lineDotRef = useRef(null);
+  const [prevYear, setPrevYear] = useState(selectedYear);
+  const [draggableKey, setDraggableKey] = useState(0);
   const [bounds, setBounds] = useState({ left: -100, right: 100, top: 0, bottom: 0 });
   const yearWidth = 50;
 
@@ -358,8 +393,20 @@ const DraggableDot = ({ years, setYear, selectedYear }) => {
     updateBounds();
     const newX = -(selectedYear - years[0]) * yearWidth - yearWidth / 2;
     setPosition({ x: newX, y: 0, percentPosition: newX / bounds.left });
+    setPrevYear(selectedYear);
   }, [yearRange]);
 
+  useEffect(() => {
+    if (Math.abs(selectedYear - prevYear) > 1) {
+      console.log('Year Jump')
+      setDraggableKey(draggableKey + 1);
+      const newX = -(selectedYear - years[0]) * yearWidth - yearWidth / 2;
+      setPosition({ x: newX, y: 0, percentPosition: newX / bounds.left });
+      setPrevYear(selectedYear);
+    } else {
+      setPrevYear(selectedYear);
+    }
+  }, [selectedYear]);
 
   useEffect(() => {
 
@@ -401,7 +448,7 @@ const DraggableDot = ({ years, setYear, selectedYear }) => {
           overflow: 'hidden',
           position: 'relative',
         }}>
-        <Draggable axis="x" bounds={bounds} onDrag={handleDrag} position={position} nodeRef={nodeRef}>
+        <Draggable axis="x" bounds={bounds} onDrag={handleDrag} position={position} nodeRef={nodeRef} key={draggableKey}>
           <div style={{ display: 'inline-block', overflow: 'hidden', whiteSpace: "nowrap", position: "absolute", left: "50%" }} ref={nodeRef}>
             {
               years.map((year, index) => (
@@ -413,7 +460,7 @@ const DraggableDot = ({ years, setYear, selectedYear }) => {
                     display: 'inline-block',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: selectedYear === year ? 'lightblue' : 'white',
+                    background: selectedYear == year ? 'lightblue' : 'white',
                     border: '1px solid #ccc',
                   }}
                 >
@@ -444,7 +491,6 @@ const DraggableDot = ({ years, setYear, selectedYear }) => {
 function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedConference }) {
 
 
-  console.log(filteredConferenceList)
   const mapParams = {
     center: [37.5, -95.7129],
     zoom: 4,
@@ -472,7 +518,6 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
 
   const handleResize = () => {
     if (mapRef.current) {
-      console.log("Resizing map")
       const { current: map } = mapRef;
       const zoom = calculateZoomLevel();
       map.setView([0, 0], zoom);

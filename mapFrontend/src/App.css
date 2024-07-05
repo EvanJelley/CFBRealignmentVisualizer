@@ -30,10 +30,20 @@
 
 /* Nav Styles */
 .dropdown-item {
-    margin: 0;
+    margin: auto;
     padding: 0.5rem 1rem;
 }
 
-.dropdown-menu {
-    width: 26rem;
+.navbar-logo {
+    height: 2rem;
+}
+
+@media screen and (min-width: 768px){
+    .dropdown-menu-conferences {
+        width: 26rem;
+    }
+}
+
+.sport-selection-img {
+    height: 1rem;
 }

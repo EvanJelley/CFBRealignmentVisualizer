@@ -32,8 +32,9 @@ const CONFLOGOSIZE = calculateConfIconSize();
 
 const footballImage = "/images/football.png";
 const basketballImage = "/images/basketball.png";
+const playImage = "/images/play.png";
 const githubLogo = "/images/github.png";
-
+const pauseImage = "/images/pause.png";
 
 function App() {
 
@@ -45,7 +46,8 @@ function App() {
   const [conferenceLogos, setConferenceLogos] = useState({})
   const [schoolIcons, setSchoolIcons] = useState({})
   const [animate, setAnimate] = useState(false)
-
+  const [redrawTimelineBool, setRedrawTimelineBool] = useState(false)
+  const animateRef = useRef(animate)
 
   const [conferenceNames, setConferenceNames] = useState([])
   const [selectedConference, setSelectedConference] = useState('')
@@ -53,6 +55,7 @@ function App() {
   const [selectedYear, setSelectedYear] = useState('')
   const [sport, setSport] = useState('football')
   const [splitConference, setSplitConference] = useState(false)
+
 
 
   const getConferences = async () => {
@@ -145,6 +148,7 @@ function App() {
   }
 
   let selectConferenceHandler = (e) => {
+    setAnimate(false)
     const button = e.target.closest('button');
     const conferenceName = button.getAttribute('data-conf-name');
     setSelectedConference(conferenceName)
@@ -156,8 +160,10 @@ function App() {
 
   const yearSearch = (e) => {
     let year = e.target.value;
-    year.length == 4 && !isNaN(year) && year >= conferenceYears[0] && year <= conferenceYears[conferenceYears.length - 1]
-      ? setSelectedYear(year) : null
+    if (year.length == 4 && !isNaN(year) && year >= conferenceYears[0] && year <= conferenceYears[conferenceYears.length - 1]) {
+      setSelectedYear(Number(year))
+      setRedrawTimelineBool(true)
+    }
   }
 
   let conferenceFilter = () => {
@@ -214,18 +220,35 @@ function App() {
   }, [selectedConference])
 
   const animationHandler = () => {
+    console.log(!animate)
     setAnimate(!animate)
   }
 
   useEffect(() => {
+    animateRef.current = animate
     if (animate) {
-      setTimeout(() => {
-        setSelectedYear(selectedYear + 1)
-      }, 1000)
-    } else {
-      clearTimeout()
+      animation()
     }
   }, [animate])
+
+  const animation = () => {
+    let i = conferenceYears.indexOf(selectedYear) + 1
+    let interval = setInterval(() => {
+      if (animateRef.current) {
+        setSelectedYear(conferenceYears[i])
+        setRedrawTimelineBool(true)
+        i++;
+        if (i == conferenceYears.length) {
+          clearInterval(interval)
+          setAnimate(false)
+        }
+      } else {
+        clearInterval(interval)
+      }
+    }, 1000)
+  }
+
+
 
   var myIcon = L.icon({
     iconUrl: APIURL + '/media/images/conf_logos/ncaa.png',
@@ -245,16 +268,16 @@ function App() {
             conferenceLogosObject={conferenceLogos}
             selectedYear={selectedYear}
             sportHandler={sportHandler}
-            splitConference={splitConference} 
-            setAnimation={animationHandler}/>
-          <OptionBay conferenceNames={conferenceNames}
-            conferenceYears={conferenceYears}
-            selectConference={selectConferenceHandler}
-            selectYear={selectYearHandler}
-            conferenceLogosObject={conferenceLogos}
+            splitConference={splitConference}
+            setAnimation={animationHandler}
+            animate={animate} />
+          <DraggableTimeline
+            years={conferenceYears}
+            setYear={selectYearHandler}
             selectedYear={selectedYear}
-            sportHandler={sportHandler}
-            splitConference={splitConference} />
+            redraw={redrawTimelineBool}
+            setRedraw={setRedrawTimelineBool}
+            setAnimate={setAnimate} />
           <Map filteredConferenceList={filteredConferenceList}
             conferenceIcons={conferenceIcons}
             schoolIcons={schoolIcons}
@@ -266,31 +289,14 @@ function App() {
   )
 }
 
-function OptionBay({ conferenceNames, conferenceYears, selectConference, selectYear, conferenceLogosObject, selectedYear, sportHandler, splitConference }) {
-  return (
-    <>
-      <div className='row'>
-        <div className='col-12'>
-          {/* {splitConference ?
-            <div className='sport-buttons-bay'>
-              <button onClick={sportHandler} className='sport-selection-button'>Basketball</button>
-              <button onClick={sportHandler} className='sport-selection-button'>Football</button>
-            </div>
-            : null} */}
-          <DraggableDot years={conferenceYears} setYear={selectYear} selectedYear={selectedYear} />
-        </div>
-      </div>
-    </>
-  )
-}
-
-function NavBar({ conferenceNames, conferenceYears, selectConference, searchYears, conferenceLogosObject, selectedYear, sportHandler, splitConference, setAnimation}) {
+function NavBar({ conferenceNames, selectConference, searchYears, conferenceLogosObject, sportHandler, setAnimation, animate }) {
+  console.log(animate)
 
   return (
     <>
-      <nav className="navbar navbar-expand-lg bg-primary navbar-dark " >
+      <nav className="navbar navbar-expand-lg" >
         <div className="container-fluid">
-          < a className="navbar-brand" href="#"> CFB Realignment Map</a >
+          <a className="navbar-brand" href="#"> CFB Realignment Map</a >
           <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
             aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <i className="fas fa-bars">Menu</i>
@@ -335,21 +341,16 @@ function NavBar({ conferenceNames, conferenceYears, selectConference, searchYear
                 </ul>
               </li>
               <li className="nav-item">
-                <button className='nav-link' onClick={setAnimation}>Animate</button>
+                <AutoScrollButton setAnimation={setAnimation} animate={animate} />
               </li>
-                
             </ul>
           </div>
 
-          {/* Icons --- ADD GITHUB */}
           <ul className="navbar-nav d-flex flex-row me-1">
             <li className="nav-item me-3 me-lg-0">
               <a className="nav-link" href="https://github.com/EvanJelley/CFBRealignmentVisualizer" target="_blank" rel="noopener noreferrer">
                 <img src={githubLogo} alt='GitHub' className='navbar-logo' />
               </a>
-            </li>
-            <li className="nav-item me-3 me-lg-0">
-              <a className="nav-link" href="#"><i className="fab fa-twitter"></i></a>
             </li>
           </ul>
 
@@ -362,14 +363,23 @@ function NavBar({ conferenceNames, conferenceYears, selectConference, searchYear
             <input type="search" className="form-control" placeholder="Type a Year" aria-label="Search" />
           </form>
         </div >
-        {/* Container wrapper */}
       </nav >
     </>
   )
 }
 
+function AutoScrollButton({ setAnimation, animate }) {
+  return (
+    <div className='autoscroll-button'>
+      Autoscroll:
+      <button className='nav-link' onClick={setAnimation} style={{ color: 'black' }}>
+        {animate ? <img src={pauseImage} /> : <img src={playImage} />}
+      </button>
+    </div>
+  )
+}
 
-const DraggableDot = ({ years, setYear, selectedYear }) => {
+const DraggableTimeline = ({ years, setYear, selectedYear, redraw, setRedraw, setAnimate }) => {
 
   let yearRange = Math.abs(years[0] - years[years.length - 1]);
 
@@ -397,16 +407,15 @@ const DraggableDot = ({ years, setYear, selectedYear }) => {
   }, [yearRange]);
 
   useEffect(() => {
-    if (Math.abs(selectedYear - prevYear) > 1) {
-      console.log('Year Jump')
+    if (redraw) {
+      console.log('redraw')
       setDraggableKey(draggableKey + 1);
-      const newX = -(selectedYear - years[0]) * yearWidth - yearWidth / 2;
-      setPosition({ x: newX, y: 0, percentPosition: newX / bounds.left });
       setPrevYear(selectedYear);
-    } else {
-      setPrevYear(selectedYear);
+      setYear(selectedYear);
+      setPosition({ x: -(selectedYear - years[0]) * yearWidth - yearWidth / 2, y: 0, percentPosition: -(selectedYear - years[0]) / yearRange });
+      setRedraw(false);
     }
-  }, [selectedYear]);
+  }, [redraw]);
 
   useEffect(() => {
 
@@ -429,9 +438,9 @@ const DraggableDot = ({ years, setYear, selectedYear }) => {
   }, [lineDotRef.current]);
 
   const handleDrag = (e, data) => {
+    setAnimate(false);
     const newPostion = { x: data.x, y: 0, percentPosition: data.x / bounds.left }
     setPosition(newPostion);
-
     const index = Math.floor((data.x / bounds.left) * (years.length));
     const safeIndex = index < 0 ? 0 : index >= years.length ? years.length - 1 : index;
     setYear(years[safeIndex]);
@@ -460,9 +469,11 @@ const DraggableDot = ({ years, setYear, selectedYear }) => {
                     display: 'inline-block',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: selectedYear == year ? 'lightblue' : 'white',
+                    background: selectedYear == year ? 'rgb(220,202,195)' : 'rgb(85,75,97)',
+                    color: selectedYear == year ? 'rgb(85,75,97)' : 'rgb(220,202,195)',
                     border: '1px solid #ccc',
                   }}
+                  className='timeline-year'
                 >
                   {year}
                 </div>
@@ -648,17 +659,3 @@ function ConferenceDetails({ conference }) {
 };
 
 export default App
-
-
-// center={mapParams.center} 
-// zoom={mapParams.zoom}
-// scrollWheelZoom={mapParams.scrollWheelZoom} 
-// maxBounds={mapParams.maxBounds} 
-// dragging={mapParams.dragging} 
-// zoomControl={mapParams.zoomControl} 
-// ref={mapRef}
-
-// const usaBounds = [
-//   [5.499550, -167.276413],
-//   [83.162102, -52.233040]
-// ];

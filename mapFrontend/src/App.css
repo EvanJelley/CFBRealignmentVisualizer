@@ -1,19 +1,14 @@
+/* COLORS
+    (48,49,72) - Dark
+    (85,75,97) - Medium
+    (107,112,127) - Gray
+    (220,202,195) - Light
+    (135,106,75) - Brown
+*/
+
 #mapcontainer { 
     height: 23.5rem;
 }
-
-/* .conference-buttons-bay {
-    margin-top: 1rem;
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-} */
-
-/* .conference-selection-button {
-    height: 6rem;
-    width: 6rem;
-    margin: 0.5rem;
-} */
 
 .conference-selection-img {
     width: 2.5rem;
@@ -29,6 +24,15 @@
 }
 
 /* Nav Styles */
+.navbar {
+    background-color: rgb(85,75,97);
+    color: rgb(220,202,195);
+}
+
+.navbar a {
+    color: inherit;
+}
+
 .dropdown-item {
     margin: auto;
     padding: 0.5rem 1rem;
@@ -46,4 +50,31 @@
 
 .sport-selection-img {
     height: 1rem;
+}
+
+.autoscroll-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgb(85,75,97);
+    color: rgb(220,202,195);
+    margin: 0 0.5rem;
+}
+
+.autoscroll-button button {
+    background-color: inherit;
+    border: none;
+    color: inherit;
+}
+
+.autoscroll-button img {
+    height: 1.5rem;
+}
+
+
+/* Timeline Styles */
+.timeline-year {
+    background-color: rgb(85,75,97);
+    color: rgb(220,202,195);
+    text-align: center;
 }

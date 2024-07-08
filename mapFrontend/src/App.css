@@ -25,12 +25,17 @@
 
 /* Nav Styles */
 .navbar {
-    background-color: rgb(85,75,97);
-    color: rgb(220,202,195);
+    background-color: rgb(0,37,76);
+    color: white;
 }
 
 .navbar a {
     color: inherit;
+}
+
+.navbar-toggler-img {
+    border: none;
+    width: 2rem;
 }
 
 .dropdown-item {
@@ -52,12 +57,19 @@
     height: 1rem;
 }
 
+.nav-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 .autoscroll-button {
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: rgb(85,75,97);
-    color: rgb(220,202,195);
+    background-color: inherit;
+    color: white;
+    padding: 0;
     margin: 0 0.5rem;
 }
 
@@ -65,16 +77,39 @@
     background-color: inherit;
     border: none;
     color: inherit;
+    margin: 0;
+}
+
+.autoscroll-button button:focus {
+    outline: none;
+    border: none;
+    box-shadow: none;
 }
 
 .autoscroll-button img {
-    height: 1.5rem;
+    height: 2rem;
 }
 
 
 /* Timeline Styles */
 .timeline-year {
-    background-color: rgb(85,75,97);
-    color: rgb(220,202,195);
+    display: inline-block;
+    align-items: center;
+    justify-content: center;
+    font-family: "Freight Text", Freight, serif;
     text-align: center;
+}
+
+.line-dot:hover {
+    cursor: pointer;
+}
+
+.triangle {
+    width: 0;
+    height: 0;
+    margin: auto;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 10px solid rgb(0, 37, 76);
+    position: relative;
 }

@@ -113,3 +113,11 @@
     border-bottom: 10px solid rgb(0, 37, 76);
     position: relative;
 }
+
+/* Chart */
+.chart-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 50vh;
+}

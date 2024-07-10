@@ -57,7 +57,7 @@ const chartOptions = {
     y: {
       title: {
         display: true,
-        text: 'Distance', // Label for the y-axis
+        text: 'Distance (miles)', // Label for the y-axis
         color: '#00254c', // Optional: you can style the label color
         font: {
           size: 16 // Optional: you can set the font size
@@ -90,47 +90,47 @@ function App() {
   const [sport, setSport] = useState('football')
   const [splitConference, setSplitConference] = useState(false)
 
-useEffect(() => {
-  const loadImages = async () => {
-    const footballImg = new Image();
-    footballImg.src = footballImage;
-    footballImg.width = 15;
-    footballImg.height = 15;
-    await new Promise((resolve, reject) => {
-      footballImg.onload = resolve;
-      footballImg.onerror = reject;
-    });
+  useEffect(() => {
+    const loadImages = async () => {
+      const footballImg = new Image();
+      footballImg.src = footballImage;
+      footballImg.width = 15;
+      footballImg.height = 15;
+      await new Promise((resolve, reject) => {
+        footballImg.onload = resolve;
+        footballImg.onerror = reject;
+      });
 
-    let selectedConferenceList = [];
-    if (sport === 'football') {
-      selectedConferenceList = conferenceList.filter((conference) =>
-        conference.conference === selectedConference && conference.football);
-    } else {
-      selectedConferenceList = conferenceList.filter((conference) =>
-        conference.conference === selectedConference && conference.basketball);
-    }
+      let selectedConferenceList = [];
+      if (sport === 'football') {
+        selectedConferenceList = conferenceList.filter((conference) =>
+          conference.conference === selectedConference && conference.football);
+      } else {
+        selectedConferenceList = conferenceList.filter((conference) =>
+          conference.conference === selectedConference && conference.basketball);
+      }
 
-    setChartData({
-      labels: selectedConferenceList.map((conference) => conference.year),
-      datasets: [
-        {
-          label: 'Average Distance Between Schools',
-          data: selectedConferenceList.map((conference) => conference.avgDistanceBetweenSchools),
-          pointStyle: selectedConferenceList.map((conference) =>
-            conference.year === selectedYear ? footballImg : false),
-        },
-        {
-          label: 'Average Distance from Center',
-          data: selectedConferenceList.map((conference) => conference.avgDistanceFromCenter),
-          pointStyle: selectedConferenceList.map((conference) =>
-            conference.year === selectedYear ? footballImg : false),
-        },
-      ],
-    });
-  };
+      setChartData({
+        labels: selectedConferenceList.map((conference) => conference.year),
+        datasets: [
+          {
+            label: 'Average Distance Between Schools',
+            data: selectedConferenceList.map((conference) => conference.avgDistanceBetweenSchools),
+            pointStyle: selectedConferenceList.map((conference) =>
+              conference.year === selectedYear ? footballImg : false),
+          },
+          {
+            label: 'Average Distance from Center',
+            data: selectedConferenceList.map((conference) => conference.avgDistanceFromCenter),
+            pointStyle: selectedConferenceList.map((conference) =>
+              conference.year === selectedYear ? footballImg : false),
+          },
+        ],
+      });
+    };
 
-  loadImages().catch(console.error);
-}, [conferenceList, selectedConference, sport, selectedYear]);
+    loadImages().catch(console.error);
+  }, [conferenceList, selectedConference, sport, selectedYear]);
 
   const getConferences = async () => {
     try {
@@ -342,37 +342,71 @@ useEffect(() => {
             conferenceLogosObject={conferenceLogos}
             selectedYear={selectedYear}
             sportHandler={sportHandler}
-            splitConference={splitConference}
-            setAnimation={animationHandler}
-            animate={animate} />
-          <DraggableTimeline
-            years={conferenceYears}
-            setYear={selectYearHandler}
-            selectedYear={selectedYear}
-            redraw={redrawTimelineBool}
-            setRedraw={setRedrawTimelineBool}
-            setAnimate={setAnimate} />
-          <div className='row'>
-            <div className='col-12 col-md-6'>
-              <Map filteredConferenceList={filteredConferenceList}
-                conferenceIcons={conferenceIcons}
-                schoolIcons={schoolIcons}
-                selectedConference={selectedConference} />
+            splitConference={splitConference} />
+          <div className='row map-chart-row'>
+            <div className='col-12 col-md-7'>
+              <div className="map-container">
+                <Map filteredConferenceList={filteredConferenceList}
+                  conferenceIcons={conferenceIcons}
+                  schoolIcons={schoolIcons}
+                  selectedConference={selectedConference} />
+                <DraggableTimeline
+                  years={conferenceYears}
+                  setYear={selectYearHandler}
+                  selectedYear={selectedYear}
+                  redraw={redrawTimelineBool}
+                  setRedraw={setRedrawTimelineBool}
+                  setAnimate={setAnimate} />
+                <MapControls setAnimation={animationHandler} animate={animate} firstYear={conferenceYears[0]} />
+
+              </div>
             </div>
-            <div className='col-12 col-md-6'>
+            <div className='col-12 col-md-5'>
               <div className='chart-container'>
                 <Line data={chartData} options={chartOptions} />
               </div>
+              <ConferenceDetails conference={filteredConferenceList[0]} />
             </div>
           </div>
-          <ConferenceDetails conference={filteredConferenceList[0]} />
         </>
       }
     </>
   )
 }
 
-function NavBar({ conferenceNames, selectConference, searchYears, conferenceLogosObject, sportHandler, setAnimation, animate }) {
+function MapControls({ setAnimation, animate, firstYear }) {
+  return (
+    <div className='map-controls'>
+        <AutoScrollButton setAnimation={setAnimation} animate={animate} />
+      <div className='map-controls-button'>
+        <button>{firstYear}</button>
+      </div>
+      <div className='map-controls-button'>
+        <button>Present Day</button>
+      </div>
+      <div className='map-controls-button'>
+        <button>More...</button>
+        {/* <div className='map-controls-button'>
+          <button>
+            "{selectedConference.conference} Country"
+          </button>
+        </div>
+        <div className='map-controls-radio'>
+          <input type="radio" id="capitalsOnly" name="displayOption" value="capitalsOnly" />
+          <label htmlFor="capitalsOnly">Show capitals only</label>
+
+          <input type="radio" id="teamsOnly" name="displayOption" value="teamsOnly" />
+          <label htmlFor="teamsOnly">Show teams only</label>
+
+          <input type="radio" id="showBoth" name="displayOption" value="showBoth" checked />
+          <label htmlFor="showBoth">Show both</label>
+        </div> */}
+      </div>
+    </div>
+  )
+}
+
+function NavBar({ conferenceNames, selectConference, searchYears, conferenceLogosObject, sportHandler }) {
   return (
     <>
       <nav className="navbar navbar-expand-lg" >
@@ -421,9 +455,6 @@ function NavBar({ conferenceNames, selectConference, searchYears, conferenceLogo
                   </li>
                 </ul>
               </li>
-              <li className="nav-item">
-                <AutoScrollButton setAnimation={setAnimation} animate={animate} />
-              </li>
             </ul>
           </div>
 
@@ -452,8 +483,8 @@ function NavBar({ conferenceNames, selectConference, searchYears, conferenceLogo
 function AutoScrollButton({ setAnimation, animate }) {
   return (
     <div className='autoscroll-button'>
-      <button className='nav-link' onClick={setAnimation}>
-        Autoscroll:
+      <p>Autoscroll</p>
+      <button onClick={setAnimation}>
         {animate ? <img src={pauseImage} /> : <img src={playImage} />}
       </button>
     </div>
@@ -534,7 +565,6 @@ const DraggableTimeline = ({ years, setYear, selectedYear, redraw, setRedraw, se
         style={{
           width: "100%",
           height: '30px',
-          border: '1px solid black',
           overflow: 'hidden',
           position: 'relative',
         }}>

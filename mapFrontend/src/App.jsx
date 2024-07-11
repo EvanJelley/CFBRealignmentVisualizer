@@ -81,6 +81,7 @@ function App() {
   const [animate, setAnimate] = useState(false)
   const [redrawTimelineBool, setRedrawTimelineBool] = useState(false)
   const animateRef = useRef(animate)
+  const [animationSpeed, setAnimationSpeed] = useState(500)
 
 
   const [conferenceNames, setConferenceNames] = useState([])
@@ -101,6 +102,15 @@ function App() {
         footballImg.onerror = reject;
       });
 
+      const basketballImg = new Image();
+      basketballImg.src = basketballImage;
+      basketballImg.width = 15;
+      basketballImg.height = 15;
+      await new Promise((resolve, reject) => {
+        basketballImg.onload = resolve;
+        basketballImg.onerror = reject;
+      });
+
       let selectedConferenceList = [];
       if (sport === 'football') {
         selectedConferenceList = conferenceList.filter((conference) =>
@@ -117,13 +127,13 @@ function App() {
             label: 'Average Distance Between Schools',
             data: selectedConferenceList.map((conference) => conference.avgDistanceBetweenSchools),
             pointStyle: selectedConferenceList.map((conference) =>
-              conference.year === selectedYear ? footballImg : false),
+              conference.year === selectedYear ? sport == 'football' ? footballImg : basketballImg : false),
           },
           {
             label: 'Average Distance from Center',
             data: selectedConferenceList.map((conference) => conference.avgDistanceFromCenter),
             pointStyle: selectedConferenceList.map((conference) =>
-              conference.year === selectedYear ? footballImg : false),
+              conference.year === selectedYear ? sport == 'football' ? footballImg : basketballImg : false),
           },
         ],
       });
@@ -221,23 +231,29 @@ function App() {
     setSplitConference(split)
   }
 
-  let selectConferenceHandler = (e) => {
+  const selectConferenceHandler = (e) => {
     setAnimate(false)
     const button = e.target.closest('button');
     const conferenceName = button.getAttribute('data-conf-name');
     setSelectedConference(conferenceName)
   }
 
-  let selectYearHandler = (year) => {
+  const selectYearHandler = (year) => {
     setSelectedYear(year)
   }
 
   const yearSearch = (e) => {
     let year = e.target.value;
+    console.log(year)
     if (year.length == 4 && !isNaN(year) && year >= conferenceYears[0] && year <= conferenceYears[conferenceYears.length - 1]) {
       setSelectedYear(Number(year))
       setRedrawTimelineBool(true)
     }
+  }
+
+  const yearMapButtonHandler = (year) => {
+    setSelectedYear(year)
+    setRedrawTimelineBool(true)
   }
 
   let conferenceFilter = () => {
@@ -319,10 +335,8 @@ function App() {
       } else {
         clearInterval(interval)
       }
-    }, 1000)
+    }, animationSpeed)
   }
-
-
 
   var myIcon = L.icon({
     iconUrl: APIURL + '/media/images/conf_logos/ncaa.png',
@@ -357,15 +371,18 @@ function App() {
                   redraw={redrawTimelineBool}
                   setRedraw={setRedrawTimelineBool}
                   setAnimate={setAnimate} />
-                <MapControls setAnimation={animationHandler} animate={animate} firstYear={conferenceYears[0]} />
-
+                <MapControls
+                  setAnimation={animationHandler}
+                  animate={animate} firstYear={conferenceYears[0]}
+                  lastYear={conferenceYears[conferenceYears.length - 1]}
+                  setYear={yearMapButtonHandler} />
               </div>
             </div>
             <div className='col-12 col-md-5'>
+              <ConferenceDetails conference={filteredConferenceList[0]} />
               <div className='chart-container'>
                 <Line data={chartData} options={chartOptions} />
               </div>
-              <ConferenceDetails conference={filteredConferenceList[0]} />
             </div>
           </div>
         </>
@@ -374,19 +391,22 @@ function App() {
   )
 }
 
-function MapControls({ setAnimation, animate, firstYear }) {
+function MapControls({ setAnimation, animate, firstYear, lastYear, setYear }) {
   return (
-    <div className='map-controls'>
+    <nav className="navbar map-controls" >
+      <div className="container-fluid ">
+        <div className="button-container">
+          <button onClick={() => setYear(firstYear)} className='first-year-button'>
+            {firstYear}
+          </button>
+          <button onClick={() => setYear(lastYear)} className='present-button'>
+            {lastYear}
+          </button>
+        </div>
         <AutoScrollButton setAnimation={setAnimation} animate={animate} />
-      <div className='map-controls-button'>
-        <button>{firstYear}</button>
-      </div>
-      <div className='map-controls-button'>
-        <button>Present Day</button>
-      </div>
-      <div className='map-controls-button'>
-        <button>More...</button>
-        {/* <div className='map-controls-button'>
+        <div className='nav-item map-controls-button secondary-button'>
+          <button>...</button>
+          {/* <div className='map-controls-button'>
           <button>
             "{selectedConference.conference} Country"
           </button>
@@ -400,16 +420,22 @@ function MapControls({ setAnimation, animate, firstYear }) {
 
           <input type="radio" id="showBoth" name="displayOption" value="showBoth" checked />
           <label htmlFor="showBoth">Show both</label>
-        </div> */}
+        </div> 
+          <div className='nav-item map-controls-button tertiary-button'>
+            <p>AutoScroll Speed</p>
+            <button onClick={setAutoScrollSpeed}>+</button>
+            <button onClick={setAutoScrollSpeed}>-</button>
+          </div>*/}
+        </div>
       </div>
-    </div>
+    </nav>
   )
 }
 
 function NavBar({ conferenceNames, selectConference, searchYears, conferenceLogosObject, sportHandler }) {
   return (
     <>
-      <nav className="navbar navbar-expand-lg" >
+      <nav className="navbar navbar-main navbar-expand-lg" >
         <div className="container-fluid">
           <a className="navbar-brand" href="#"> CFB Realignment Map</a >
           <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
@@ -466,13 +492,12 @@ function NavBar({ conferenceNames, selectConference, searchYears, conferenceLogo
             </li>
           </ul>
 
-          {/* Search */}
           <form className="w-auto" onChange={searchYears} onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
             }
           }}>
-            <input type="search" className="form-control" placeholder="Type a Year" aria-label="Search" maxLength="4" />
+            <input type="search" className="form-control searchbar" placeholder="Type a Year" aria-label="Search" maxLength="4" />
           </form>
         </div >
       </nav >
@@ -482,12 +507,10 @@ function NavBar({ conferenceNames, selectConference, searchYears, conferenceLogo
 
 function AutoScrollButton({ setAnimation, animate }) {
   return (
-    <div className='autoscroll-button'>
+    <button onClick={setAnimation} className='nav-item autoscroll-button'>
       <p>Autoscroll</p>
-      <button onClick={setAnimation}>
-        {animate ? <img src={pauseImage} /> : <img src={playImage} />}
-      </button>
-    </div>
+      {animate ? <img src={pauseImage} /> : <img src={playImage} />}
+    </button>
   )
 }
 
@@ -552,6 +575,7 @@ const DraggableTimeline = ({ years, setYear, selectedYear, redraw, setRedraw, se
   const handleDrag = (e, data) => {
     setAnimate(false);
     const newPostion = { x: data.x, y: 0, percentPosition: data.x / bounds.left }
+    console.log(newPostion);
     setPosition(newPostion);
     const index = Math.floor((data.x / bounds.left) * (years.length));
     const safeIndex = index < 0 ? 0 : index >= years.length ? years.length - 1 : index;
@@ -570,6 +594,7 @@ const DraggableTimeline = ({ years, setYear, selectedYear, redraw, setRedraw, se
         }}>
         <Draggable axis="x" bounds={bounds} onDrag={handleDrag} position={position} nodeRef={nodeRef} key={draggableKey}>
           <div style={{ display: 'inline-block', overflow: 'hidden', whiteSpace: "nowrap", position: "absolute", left: "50%" }} ref={nodeRef}>
+            {console.log(selectedYear)}
             {
               years.map((year, index) => (
                 <div
@@ -600,25 +625,8 @@ const DraggableTimeline = ({ years, setYear, selectedYear, redraw, setRedraw, se
 
 function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedConference }) {
 
-
-  const mapParams = {
-    center: [37.5, -95.7129],
-    zoom: 4,
-    scrollWheelZoom: false,
-    dragging: false,
-    zoomControl: false,
-    doubleClickZoom: false,
-    vpHeight: 50,
-  };
-
   const mapRef = useRef(null);
   const containerRef = useRef(null);
-
-  const calculateZoomLevel = () => {
-    if (vpWidth < 768) return 3;
-    if (vpWidth < 1500) return 4;
-    return 5;
-  };
 
   const calculateHeight = () => {
     if (vpWidth < 768) return 33;
@@ -629,8 +637,8 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
   const handleResize = () => {
     if (mapRef.current) {
       const { current: map } = mapRef;
-      const zoom = calculateZoomLevel();
-      map.setView([0, 0], zoom);
+      map.fitBounds(USbounds);
+      map.zoomControl.setPosition('topright');
     }
   };
 
@@ -648,18 +656,30 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
     };
   }, []);
 
+  const USbounds = [
+    [49.3457868, -66.93457],
+    [24.396308, -125.0859375]
+  ];
+
+  const greaterUsBounds = [
+    [51, -64],
+    [22, -127]
+  ];
 
   return (
     <div ref={containerRef}>
       <MapContainer
-        center={[37.8, -96]}
-        zoom={calculateZoomLevel()}
+        maxBounds={USbounds}
+        maxBoundsViscosity={1.0}
+        ref={mapRef}
         style={{ height: `${calculateHeight()}vh`, width: '100%' }}
-        scrollWheelZoom={mapParams.scrollWheelZoom}
-        dragging={mapParams.dragging}
-        zoomControl={mapParams.zoomControl}
-        doubleClickZoom={mapParams.doubleClickZoom}
-        whenCreated={(mapInstance) => { mapRef.current = mapInstance; handleResize(); }}>
+        zoomSnap={.25}
+        zoomDelta={.5}
+        minZoom={2}
+        maxZoom={5}
+        whenCreated={(mapInstance) => { mapRef.current = mapInstance; handleResize(); }}
+      >
+        {/* <ZoomControlComponent position="bottomright" /> */}
         <TileLayer
           attribution='&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>'
           url='https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png'
@@ -744,12 +764,15 @@ const HawaiiMapOverlay = ({ school, schoolIcons }) => {
 
 function ConferenceDetails({ conference }) {
   return (
-    <div>
-      <h3>{conference.conference} - {conference.year}</h3>
-      <ul>
-        <li>Average School Distance from Center: {conference.avgDistanceFromCenter} miles</li>
-        <li>Average Distance Between Schools: {conference.avgDistanceBetweenSchools} miles</li>
-        <li>Proposed Capital: {conference.capital.name} - {conference.capital.state}</li>
+    <div className='conference-details'>
+      <div className='conference-details-main'>
+        <h3 className='conference-details-conference'><span className='conference-details-category'>Conference:</span> {conference.conference}</h3>
+        <h3 className='conference-details-year'><span className='conference-details-category'>Year:</span> {conference.year}</h3>
+      </div>
+      <ul className='conference-details-specific'>
+        <li><span className='conference-details-category'>Proposed Capital:</span><span className='conference-details-item'>{conference.capital.name}, {conference.capital.state}</span></li>
+        <li><span className='conference-details-category'>Distance from GeoCenter:</span><span className='conference-details-item'>{conference.avgDistanceFromCenter} miles</span></li>
+        <li><span className='conference-details-category'>Distance Between Schools:</span><span className='conference-details-item'>{conference.avgDistanceBetweenSchools} miles</span></li>
       </ul>
     </div>
   )

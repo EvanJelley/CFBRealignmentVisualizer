@@ -27,7 +27,7 @@ class ConferenceWithLogoSerializer(serializers.ModelSerializer):
     logo = serializers.ImageField()
     class Meta:
         model = ConferenceName
-        fields = ['id', 'name', 'logo']
+        fields = ['id', 'name', 'logo', 'colors']
 
 class MajorCitySerializer(serializers.ModelSerializer):
     class Meta:

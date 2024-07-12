@@ -6,6 +6,11 @@
     (135,106,75) - Brown
 */
 
+/* General Styles */
+body {
+    font-family: "Montserrat", sans-serif;
+}
+
 #mapcontainer { 
     height: 23.5rem;
 }
@@ -76,7 +81,7 @@
     display: inline-block;
     align-items: center;
     justify-content: center;
-    font-family: "Freight Text", Freight, serif;
+    font-family: "Crimson Text", serif;
     text-align: center;
 }
 
@@ -125,6 +130,7 @@
     border: 1px solid rgb(107, 135, 165);
     border-radius: 1rem;
     overflow: hidden;
+    margin-bottom: 1rem;
 }
 
 /* Map Controls */
@@ -162,10 +168,15 @@
 }
 
 .secondary-button {
-    background-color: rgb(233, 234, 236);
+    background-color: #fff;
     color: rgb(0, 37, 76);
     overflow: hidden;
+    border: 1px solid #ddd;
     border-radius: 20px;
+}
+
+.secondary-button:hover {
+    background-color: #f1f1f1;
 }
 
 .map-controls-button button {
@@ -198,6 +209,7 @@
     border: 1px solid #ddd;
     border-radius: 25px;
     overflow: hidden;
+    margin: auto;
 }
 
 .first-year-button {
@@ -249,6 +261,12 @@
     vertical-align: middle;
 }
 
+.chart-details-container {
+    border: 1px solid rgb(107, 135, 165);
+    border-radius: 20px;
+    overflow: hidden;
+}
+
 /* Conference Detail */
 
 .conference-details {
@@ -260,6 +278,17 @@
     align-items: center;
     margin: 1rem;
     border-bottom: 1px solid rgb(107, 135, 165);
+    font-size: 1rem;
+}
+
+.conference-details-category-header {
+    font-weight: bold;
+    font-family: "Crimson Text", serif;
+}
+
+.conference-details-category-header-year {
+    padding-left: 1rem;
+    font-family: "Crimson Text", serif;
 }
 
 .conference-details-conference {
@@ -281,8 +310,43 @@
 
 .conference-details-category {
     font-weight: bold;
+    padding: .5rem;
+    padding-right: 1rem;
+    border-bottom: 1px solid rgb(107, 135, 165);
+}
+
+.conference-details-table {
+    justify-content: center;
+    margin: auto;
 }
 
 .conference-details-item {
-    justify-content: right;
+    padding-left: 1rem;
+    border-left: 1px solid rgb(107, 135, 165);
+    border-bottom: 1px solid rgb(107, 135, 165);
+}
+
+.conference-details-conference-img {
+    width: auto;
+    height: 2rem;
+    padding-left: 1rem;
+}
+
+.conference-details-color-square {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    margin-right: .5rem;
+    border-radius: 50%;
+}
+
+/* Chart Controls */
+
+.chart-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: rgb(0, 37, 76);
+    background-color: white;
+    border-top: 1px solid rgb(107, 135, 165);
 }

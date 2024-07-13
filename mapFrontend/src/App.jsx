@@ -78,6 +78,7 @@ function App() {
   const [redrawTimelineBool, setRedrawTimelineBool] = useState(false)
   const animateRef = useRef(animate)
   const [animationSpeed, setAnimationSpeed] = useState(500)
+  const [teamOrCapitals, setTeamOrCapitals] = useState({ teams: true, capitals: true });
 
 
   const [conferenceNames, setConferenceNames] = useState([])
@@ -87,7 +88,7 @@ function App() {
   const [sport, setSport] = useState('football')
   const [splitConference, setSplitConference] = useState(false)
 
-  { /* API Calls */}
+  { /* API Calls */ }
   const getConferences = async () => {
     try {
       setIsLoading(true)
@@ -319,28 +320,44 @@ function App() {
   }
 
   useEffect(() => {
-    animateRef.current = animate
+    let interval;
     if (animate) {
-      animation()
-    }
-  }, [animate])
-
-  const animation = () => {
-    let i = conferenceYears.indexOf(selectedYear) + 1
-    let interval = setInterval(() => {
-      if (animateRef.current) {
-        setSelectedYear(conferenceYears[i])
-        setRedrawTimelineBool(true)
-        i++;
-        if (i == conferenceYears.length) {
-          clearInterval(interval)
-          setAnimate(false)
+      let i = conferenceYears.indexOf(selectedYear) + 1;
+      interval = setInterval(() => {
+        if (i >= conferenceYears.length) {
+          clearInterval(interval);
+          setAnimate(false);
+        } else {
+          setSelectedYear(conferenceYears[i]);
+          setRedrawTimelineBool(true);
+          i++;
         }
-      } else {
-        clearInterval(interval)
-      }
-    }, animationSpeed)
+      }, animationSpeed);
+    }
+    return () => clearInterval(interval);
+  }, [animate, animationSpeed]);
+
+  const autoScrollSpeedHandler = (value) => {
+    const newSpeed = value === 'increase' ? Math.min(animationSpeed + 100, 1500) : Math.max(animationSpeed - 100, 100);
+    setAnimationSpeed(newSpeed);
   }
+
+  const handleTeamOrCapitals = (value) => {
+    switch (value) {
+      case 'capitals':
+        setTeamOrCapitals({ teams: false, capitals: true });
+        break;
+      case 'teams':
+        setTeamOrCapitals({ teams: true, capitals: false });
+        break;
+      case 'both':
+        setTeamOrCapitals({ teams: true, capitals: true });
+        break;
+      default:
+        break;
+    }
+    console.log(teamOrCapitals)
+  };
 
   var myIcon = L.icon({
     iconUrl: APIURL + '/media/images/conf_logos/ncaa.png',
@@ -368,7 +385,8 @@ function App() {
                 <Map filteredConferenceList={filteredConferenceList}
                   conferenceIcons={conferenceIcons}
                   schoolIcons={schoolIcons}
-                  selectedConference={selectedConference} />
+                  selectedConference={selectedConference}
+                  teamsOrCapitals={teamOrCapitals} />
                 <DraggableTimeline
                   years={conferenceYears}
                   setYear={selectYearHandler}
@@ -380,7 +398,12 @@ function App() {
                   setAnimation={animationHandler}
                   animate={animate} firstYear={conferenceYears[0]}
                   lastYear={conferenceYears[conferenceYears.length - 1]}
-                  setYear={yearMapButtonHandler} />
+                  setYear={yearMapButtonHandler}
+                  selectedConference={selectedConference}
+                  setAutoScrollSpeed={autoScrollSpeedHandler}
+                  setTeamOrCapitals={handleTeamOrCapitals}
+                  animationSpeed={animationSpeed}
+                  teamOrCapitals={teamOrCapitals} />
               </div>
             </div>
             <div className='col-12 col-md-5'>
@@ -393,9 +416,9 @@ function App() {
                 <div className='chart-container'>
                   <Line data={chartData} options={chartOptions} />
                 </div>
-                <ChartControls 
-                  setAnimation={animationHandler} 
-                  animate={animate} 
+                <ChartControls
+                  setAnimation={animationHandler}
+                  animate={animate}
                   firstYear={conferenceYears[0]}
                   lastYear={conferenceYears[conferenceYears.length - 1]}
                   setYear={yearMapButtonHandler} />
@@ -429,44 +452,64 @@ function ChartControls({ setAnimation, animate, firstYear, lastYear, setYear }) 
   )
 };
 
-function MapControls({ setAnimation, animate, firstYear, lastYear, setYear }) {
+function MapControls({ setAnimation, animate, firstYear, lastYear, setYear, selectedConference, setAutoScrollSpeed, setTeamOrCapitals, teamOrCapitals, animationSpeed }) {
   return (
-    <nav className="navbar map-controls" >
-      <div className="container-fluid ">
-        <div className="nav-item button-container">
+    <nav className="navbar map-controls">
+      <div className="container-fluid">
+        <li className="nav-item button-container">
           <button onClick={() => setYear(firstYear)} className='first-year-button'>
             {firstYear}
           </button>
           <button onClick={() => setYear(lastYear)} className='present-button'>
             {lastYear}
           </button>
-        </div>
+        </li>
         <AutoScrollButton setAnimation={setAnimation} animate={animate} />
-        <div className='nav-item map-controls-button secondary-button'>
-          <button>...</button>
-          {/* <div className='map-controls-button'>
-          <button>
-            "{selectedConference.conference} Country"
-          </button>
-        </div>
-        <div className='map-controls-radio'>
-          <input type="radio" id="capitalsOnly" name="displayOption" value="capitalsOnly" />
-          <label htmlFor="capitalsOnly">Show capitals only</label>
+        <li className="nav-item dropdown more-circle">
+          <a className="nav-link more-button more-button-container" href="#" id="navbarDropdown" role="button"
+            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">...</a>
+          <ul className="dropdown-menu dropdown-menu-up more-map-menu" aria-labelledby="navbarDropdown">
 
-          <input type="radio" id="teamsOnly" name="displayOption" value="teamsOnly" />
-          <label htmlFor="teamsOnly">Show teams only</label>
+            <h3 className='map-controls-header'>Map Controls</h3>
 
-          <input type="radio" id="showBoth" name="displayOption" value="showBoth" checked />
-          <label htmlFor="showBoth">Show both</label>
-        </div> 
-          <div className='nav-item map-controls-button tertiary-button'>
-            <p>AutoScroll Speed</p>
-            <button onClick={setAutoScrollSpeed}>+</button>
-            <button onClick={setAutoScrollSpeed}>-</button>
-          </div>*/}
-        </div>
+            <button className='btn btn-secondary map-more-control' onClick={(e) => { e.stopPropagation(); setAutoScrollSpeed(); }}>
+              Show "{selectedConference} Country"
+            </button>
+
+            <button value="capitalsonly" className='btn btn-secondary map-more-control' onClick={(e) => { e.stopPropagation(); setTeamOrCapitals("capitals"); }}>
+              Capitals Only {teamOrCapitals.capitals && !teamOrCapitals.teams ? <span className='option-check'>&#10003;</span> : null}
+            </button>
+
+            <button value="teamsonly" className='btn btn-secondary map-more-control' onClick={(e) => { e.stopPropagation(); setTeamOrCapitals("teams"); }}>
+              Teams Only {teamOrCapitals.teams && !teamOrCapitals.capitals ? <span className='option-check'>&#10003;</span> : null}
+            </button>
+
+            <button value="both" className='btn btn-secondary map-more-control' onClick={(e) => { e.stopPropagation(); setTeamOrCapitals("both"); }}>
+              Teams & Capitals {teamOrCapitals.teams && teamOrCapitals.capitals ? <span className='option-check'>&#10003;</span> : null}
+            </button>
+
+            <div className='map-more-control'>
+              <p>AutoScroll Speed</p>
+              <div className='autoscroll-speed-container'>
+                <button className='autoscroll-speed-btn' onClick={(e) => { e.stopPropagation(); setAutoScrollSpeed("increase"); }}>+</button>
+                <button className='autoscroll-speed-btn' onClick={(e) => { e.stopPropagation(); setAutoScrollSpeed("decrease"); }}>-</button>
+                <div className='autoscroll-speed-display'>{`${animationSpeed / 1000 } s`}</div>
+              </div>
+            </div>
+          </ul>
+        </li>
+
       </div>
     </nav>
+  )
+}
+
+function AutoScrollButton({ setAnimation, animate }) {
+  return (
+    <button onClick={setAnimation} className='nav-item autoscroll-button'>
+      <p>Autoscroll </p>
+      {animate ? <img src={pauseImage} /> : <img src={playImage} />}
+    </button>
   )
 }
 
@@ -543,14 +586,6 @@ function NavBar({ conferenceNames, selectConference, searchYears, conferenceLogo
   )
 }
 
-function AutoScrollButton({ setAnimation, animate }) {
-  return (
-    <button onClick={setAnimation} className='nav-item autoscroll-button'>
-      <p>Autoscroll</p>
-      {animate ? <img src={pauseImage} /> : <img src={playImage} />}
-    </button>
-  )
-}
 
 const DraggableTimeline = ({ years, setYear, selectedYear, redraw, setRedraw, setAnimate }) => {
 
@@ -660,7 +695,7 @@ const DraggableTimeline = ({ years, setYear, selectedYear, redraw, setRedraw, se
   );
 };
 
-function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedConference }) {
+function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedConference, teamsOrCapitals }) {
 
   const mapRef = useRef(null);
   const containerRef = useRef(null);
@@ -716,12 +751,12 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
         maxZoom={5}
         whenCreated={(mapInstance) => { mapRef.current = mapInstance; handleResize(); }}
       >
-        {/* <ZoomControlComponent position="bottomright" /> */}
         <TileLayer
           attribution='&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>'
           url='https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png'
         />
-        {selectedConference == 'NCAA' ?
+
+        {selectedConference == 'NCAA' && teamsOrCapitals.teams ?
           filteredConferenceList.map((conference) => conference.schools.map((school) => (
             <Marker key={`${school.name}-${school.id}`} position={[Number(school.latitude), Number(school.longitude)]}
               icon={conferenceIcons[conference.conference] || myIcon} zIndexOffset={1000}>
@@ -731,7 +766,7 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
             </Marker>
           ))
           )
-          :
+          : teamsOrCapitals.teams &&
           filteredConferenceList.map((conference) => conference.schools.map((school) => (
             <Marker key={`${school.name}-${school.id}`} position={[Number(school.latitude), Number(school.longitude)]}
               icon={schoolIcons[school.name]} zIndexOffset={1000}>
@@ -741,7 +776,7 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
             </Marker>
           ))
           )}
-        {filteredConferenceList.map((conference) => (
+        {teamsOrCapitals.capitals && filteredConferenceList.map((conference) => (
           <Marker key={`${conference.capital.name}-${conference.id}`}
             position={[Number(conference.capital.latitude), Number(conference.capital.longitude)]}
             icon={conferenceIcons[conference.conference]} zIndexOffset={500}>
@@ -751,7 +786,7 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
           </Marker>
         ))}
         {filteredConferenceList.map((conference) => (conference.schools.map((school) => (
-          school.name.includes('Hawai') ? <HawaiiMapOverlay school={school} schoolIcons={schoolIcons} /> : null)
+          school.name.includes('Hawai') && teamsOrCapitals.teams ? <HawaiiMapOverlay school={school} schoolIcons={schoolIcons} /> : null)
         )))}
       </MapContainer>
     </div>
@@ -810,10 +845,10 @@ function ConferenceDetails({ conference, confLogos, confColors, selectedConferen
         <h3 className='conference-details-year'>
           <span className='conference-details-category-header'>
             Year:
-            </span> 
-            <span className='conference-details-category-header-year'>
-              {conference.year}
-              </span>
+          </span>
+          <span className='conference-details-category-header-year'>
+            {conference.year}
+          </span>
         </h3>
       </div>
       <div className='conference-details-specific'>
@@ -830,16 +865,16 @@ function ConferenceDetails({ conference, confLogos, confColors, selectedConferen
             <tr>
               <td className='conference-details-category'>
                 <span className="conference-details-color-square" style={{ backgroundColor: confColors[selectedConference].main }}></span>
-                Avg. Distance from GeoCenter
+                Avg. Distance Between Schools
               </td>
-              <td className='conference-details-item'>{Math.round(conference.avgDistanceFromCenter)} miles</td>
+              <td className='conference-details-item'>{Math.round(conference.avgDistanceBetweenSchools)} miles</td>
             </tr>
             <tr>
               <td className='conference-details-category'>
                 <span className="conference-details-color-square" style={{ backgroundColor: confColors[selectedConference].light }}></span>
-                Avg. Distance Between Schools
+                Avg. Distance from GeoCenter
               </td>
-              <td className='conference-details-item'>{Math.round(conference.avgDistanceBetweenSchools)} miles</td>
+              <td className='conference-details-item'>{Math.round(conference.avgDistanceFromCenter)} miles</td>
             </tr>
           </tbody>
         </table>

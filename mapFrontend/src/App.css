@@ -179,13 +179,6 @@ body {
     background-color: #f1f1f1;
 }
 
-.map-controls-button button {
-    background-color: inherit;
-    border: none;
-    color: inherit;
-    padding: 0 .5rem;
-}
-
 .autoscroll-button button {
     background-color: inherit;
     border: none;
@@ -199,8 +192,19 @@ body {
     box-shadow: none;
 }
 
+.autoscroll-button:hover {
+    background-color: #f1f1f1;
+    color: rgb(0, 37, 76)
+}
+
+.autoscroll-button:focus {
+    outline: none;
+    box-shadow: none;
+}
+
 .autoscroll-button img {
     height: 1.5rem;
+    margin-left: .5rem;
 }
 
 .button-container {
@@ -209,6 +213,14 @@ body {
     border: 1px solid #ddd;
     border-radius: 25px;
     overflow: hidden;
+    margin: auto;
+}
+
+.more-button-container {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ddd;
+    border-radius: 25px;
     margin: auto;
 }
 
@@ -259,6 +271,99 @@ body {
     height: 24px;
     display: inline-block;
     vertical-align: middle;
+}
+
+.more-circle {
+    margin: auto;
+}
+
+.more-button:hover {
+    background-color: #f1f1f1;
+}
+
+.dropdown-menu-up {
+    top: auto;
+    bottom: 100%;
+    right: 0%;
+    transform: translate(-70%, -5px);
+}
+
+.more-map-menu {
+    background-color: #555;
+    opacity: 0.9;
+    padding: 0;
+    margin: 0;
+    border-radius: 20px;
+    overflow: hidden;
+    width: 17rem;
+}
+
+.map-controls-header {
+    font-size: medium;
+    color: #f1f1f1;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+.map-controls-radio {
+    width: 100%;
+}
+
+.map-more-control {
+    display: flex;
+    font-size: small;
+    color: #f1f1f1;
+    margin: 0;
+    padding: 0.5rem 1rem;
+    background-color: #555;
+    border: none;
+    border-radius: 0;
+    width: 100%;
+}
+
+.btn-secondary:hover {
+    cursor: pointer;
+}
+
+.btn-secondary:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+.autoscroll-speed-container {
+    margin-left: 1rem;
+}
+
+.autoscroll-speed-btn {
+    display: inline;
+    font-size: medium;
+    color: #f1f1f1;
+    background-color: #555;
+    border: 1px solid #f1f1f1;
+    border-radius: 0;
+    align-items: center;
+    width: 1.5rem;
+    margin: 0;
+}
+
+.autoscroll-speed-btn:hover {
+    cursor: pointer;
+    color: #555;
+    background-color: #f1f1f1;
+}
+
+.autoscroll-speed-btn:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+.autoscroll-speed-display {
+    display: inline;
+    margin-left: 1rem;
+}
+
+.option-check {
+    padding-left: 1rem;
 }
 
 .chart-details-container {

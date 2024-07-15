@@ -7,9 +7,12 @@ import {
   useMap,
   Marker,
   Popup,
+  Polygon,
+  Polyline,
+  Circle,
 } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
+import L, { map } from 'leaflet';
 import Draggable from 'react-draggable';
 import { Line } from 'react-chartjs-2';
 import Chart from "chart.js/auto";
@@ -78,7 +81,8 @@ function App() {
   const [redrawTimelineBool, setRedrawTimelineBool] = useState(false)
   const animateRef = useRef(animate)
   const [animationSpeed, setAnimationSpeed] = useState(500)
-  const [teamOrCapitals, setTeamOrCapitals] = useState({ teams: true, capitals: true });
+  const [mapDisplay, setMapDisplay] = useState({ teams: true, capitals: true, lines: true, confCountry: true });
+  const [confCountryOpacity, setConfCountryOpacity] = useState(0.1)
 
 
   const [conferenceNames, setConferenceNames] = useState([])
@@ -342,22 +346,32 @@ function App() {
     setAnimationSpeed(newSpeed);
   }
 
-  const handleTeamOrCapitals = (value) => {
+  const handleMapDisplay = (value) => {
     switch (value) {
       case 'capitals':
-        setTeamOrCapitals({ teams: false, capitals: true });
+        setMapDisplay({ teams: mapDisplay.teams, capitals: !mapDisplay.capitals, lines: mapDisplay.lines, confCountry: mapDisplay.confCountry });
         break;
       case 'teams':
-        setTeamOrCapitals({ teams: true, capitals: false });
+        setMapDisplay({ teams: !mapDisplay.teams, capitals: mapDisplay.capitals, lines: mapDisplay.lines, confCountry: mapDisplay.confCountry });
         break;
-      case 'both':
-        setTeamOrCapitals({ teams: true, capitals: true });
+      case 'lines':
+        setMapDisplay({ teams: mapDisplay.teams, capitals: mapDisplay.capitals, lines: !mapDisplay.lines, confCountry: mapDisplay.confCountry });
+        break;
+      case 'confCountry':
+        setMapDisplay({ teams: mapDisplay.teams, capitals: mapDisplay.capitals, lines: mapDisplay.lines, confCountry: !mapDisplay.confCountry });
         break;
       default:
         break;
     }
-    console.log(teamOrCapitals)
   };
+
+  const handleConfCountryOpacity = (value) => {
+    if (value === 'increase') {
+      setConfCountryOpacity(parseFloat((Math.min(confCountryOpacity + 0.1, 1)).toFixed(1)));
+    } else {
+      setConfCountryOpacity(parseFloat((Math.max(confCountryOpacity - 0.1, 0.1)).toFixed(1)));
+    }
+  }
 
   var myIcon = L.icon({
     iconUrl: APIURL + '/media/images/conf_logos/ncaa.png',
@@ -386,7 +400,9 @@ function App() {
                   conferenceIcons={conferenceIcons}
                   schoolIcons={schoolIcons}
                   selectedConference={selectedConference}
-                  teamsOrCapitals={teamOrCapitals} />
+                  mapElements={mapDisplay}
+                  confColors={conferenceColors} 
+                  countryOpacity={confCountryOpacity}/>
                 <DraggableTimeline
                   years={conferenceYears}
                   setYear={selectYearHandler}
@@ -401,9 +417,11 @@ function App() {
                   setYear={yearMapButtonHandler}
                   selectedConference={selectedConference}
                   setAutoScrollSpeed={autoScrollSpeedHandler}
-                  setTeamOrCapitals={handleTeamOrCapitals}
+                  setMapDisplayOptions={handleMapDisplay}
                   animationSpeed={animationSpeed}
-                  teamOrCapitals={teamOrCapitals} />
+                  mapDisplayOptions={mapDisplay} 
+                  confCountryOpacity={confCountryOpacity}
+                  setConfCountryOpacity={handleConfCountryOpacity}/>
               </div>
             </div>
             <div className='col-12 col-md-5'>
@@ -452,7 +470,7 @@ function ChartControls({ setAnimation, animate, firstYear, lastYear, setYear }) 
   )
 };
 
-function MapControls({ setAnimation, animate, firstYear, lastYear, setYear, selectedConference, setAutoScrollSpeed, setTeamOrCapitals, teamOrCapitals, animationSpeed }) {
+function MapControls({ setAnimation, animate, firstYear, lastYear, setYear, selectedConference, setAutoScrollSpeed, setMapDisplayOptions, mapDisplayOptions, animationSpeed, confCountryOpacity, setConfCountryOpacity }) {
   return (
     <nav className="navbar map-controls">
       <div className="container-fluid">
@@ -472,30 +490,40 @@ function MapControls({ setAnimation, animate, firstYear, lastYear, setYear, sele
 
             <h3 className='map-controls-header'>Map Controls</h3>
 
-            <button className='btn btn-secondary map-more-control' onClick={(e) => { e.stopPropagation(); setAutoScrollSpeed(); }}>
-              Show "{selectedConference} Country"
+            <button className='btn btn-secondary map-more-control' onClick={(e) => { e.stopPropagation(); setMapDisplayOptions("confCountry"); }}>
+              Show "{selectedConference} Country" {mapDisplayOptions.confCountry ? <span className='option-check'>&#10003;</span> : null}
             </button>
 
-            <button value="capitalsonly" className='btn btn-secondary map-more-control' onClick={(e) => { e.stopPropagation(); setTeamOrCapitals("capitals"); }}>
-              Capitals Only {teamOrCapitals.capitals && !teamOrCapitals.teams ? <span className='option-check'>&#10003;</span> : null}
+            <button value="capitalsonly" className='btn btn-secondary map-more-control' onClick={(e) => { e.stopPropagation(); setMapDisplayOptions("capitals"); }}>
+              Show Capitals {mapDisplayOptions.capitals ? <span className='option-check'>&#10003;</span> : null}
             </button>
 
-            <button value="teamsonly" className='btn btn-secondary map-more-control' onClick={(e) => { e.stopPropagation(); setTeamOrCapitals("teams"); }}>
-              Teams Only {teamOrCapitals.teams && !teamOrCapitals.capitals ? <span className='option-check'>&#10003;</span> : null}
+            <button value="teamsonly" className='btn btn-secondary map-more-control' onClick={(e) => { e.stopPropagation(); setMapDisplayOptions("teams"); }}>
+              Show Teams {mapDisplayOptions.teams ? <span className='option-check'>&#10003;</span> : null}
             </button>
 
-            <button value="both" className='btn btn-secondary map-more-control' onClick={(e) => { e.stopPropagation(); setTeamOrCapitals("both"); }}>
-              Teams & Capitals {teamOrCapitals.teams && teamOrCapitals.capitals ? <span className='option-check'>&#10003;</span> : null}
+            <button value="both" className='btn btn-secondary map-more-control' onClick={(e) => { e.stopPropagation(); setMapDisplayOptions("lines"); }}>
+              Show Lines to GeoCenter {mapDisplayOptions.lines ? <span className='option-check'>&#10003;</span> : null}
             </button>
 
             <div className='map-more-control'>
               <p>AutoScroll Speed</p>
-              <div className='autoscroll-speed-container'>
-                <button className='autoscroll-speed-btn' onClick={(e) => { e.stopPropagation(); setAutoScrollSpeed("increase"); }}>+</button>
-                <button className='autoscroll-speed-btn' onClick={(e) => { e.stopPropagation(); setAutoScrollSpeed("decrease"); }}>-</button>
-                <div className='autoscroll-speed-display'>{`${animationSpeed / 1000 } s`}</div>
+              <div className='map-control-plusminus-container'>
+                <button className='plusminus-btn' onClick={(e) => { e.stopPropagation(); setAutoScrollSpeed("increase"); }}>+</button>
+                <button className='plusminus-btn' onClick={(e) => { e.stopPropagation(); setAutoScrollSpeed("decrease"); }}>-</button>
+                <div className='plusminus-display'>{`${animationSpeed / 1000} s`}</div>
               </div>
             </div>
+
+            <div className='map-more-control'>
+              <p>Opacity</p>
+              <div className='map-control-plusminus-container'>
+                <button className='plusminus-btn' onClick={(e) => { e.stopPropagation(); setConfCountryOpacity("increase"); }}>+</button>
+                <button className='plusminus-btn' onClick={(e) => { e.stopPropagation(); setConfCountryOpacity("decrease"); }}>-</button>
+                <div className='plusminus-display'>{`${confCountryOpacity}`}</div>
+              </div>
+            </div>
+                
           </ul>
         </li>
 
@@ -666,7 +694,6 @@ const DraggableTimeline = ({ years, setYear, selectedYear, redraw, setRedraw, se
         }}>
         <Draggable axis="x" bounds={bounds} onDrag={handleDrag} position={position} nodeRef={nodeRef} key={draggableKey}>
           <div style={{ display: 'inline-block', overflow: 'hidden', whiteSpace: "nowrap", position: "absolute", left: "50%" }} ref={nodeRef}>
-            {console.log(selectedYear)}
             {
               years.map((year, index) => (
                 <div
@@ -695,24 +722,54 @@ const DraggableTimeline = ({ years, setYear, selectedYear, redraw, setRedraw, se
   );
 };
 
-function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedConference, teamsOrCapitals }) {
+function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedConference, mapElements, confColors, countryOpacity }) {
 
   const mapRef = useRef(null);
   const containerRef = useRef(null);
+  const [width, setwidth] = useState(window.innerWidth);
+  const [schoolCoordinates, setSchoolCoordinates] = useState([]);
+  const [schoolToCenterLines, setSchoolToCenterLines] = useState([])
+
+  const CircleRadius = 200 * 1609
+
+  useEffect(() => {
+    let coords = [];
+    let linesToCenter = [];
+    filteredConferenceList.map((conference) => {
+      conference.schools.map((school) => {
+        coords.push([Number(school.latitude), Number(school.longitude)]);
+        let lineToCenter = []
+        lineToCenter.push([Number(school.latitude), Number(school.longitude)]);
+        lineToCenter.push([Number(conference.capital.latitude), Number(conference.capital.longitude)]);
+        linesToCenter.push(lineToCenter)
+      });
+    });
+    console.log(linesToCenter)
+    setSchoolCoordinates(coords);
+    setSchoolToCenterLines(linesToCenter)
+  }, [filteredConferenceList]);
 
   const calculateHeight = () => {
-    if (vpWidth < 768) return 33;
-    if (vpWidth < 1500) return 50;
+    if (width < 480) return 33;
+    if (width < 1500) return 50;
     return 75;
   };
 
+  const [mapHeight, setMapHeight] = useState(calculateHeight());
+
+
   const handleResize = () => {
     if (mapRef.current) {
+      setwidth(window.innerWidth);
       const { current: map } = mapRef;
       map.fitBounds(USbounds);
       map.zoomControl.setPosition('topright');
     }
   };
+
+  useEffect(() => {
+    setMapHeight(calculateHeight());
+  }, [width]);
 
   useEffect(() => {
     const observer = new ResizeObserver(handleResize);
@@ -738,13 +795,21 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
     [22, -127]
   ];
 
+  console.log(confColors[selectedConference])
+
+  const lineOptions = { color: confColors[selectedConference].main, weight: "1", fill: true, }
+  const circleOptions = { color: confColors[selectedConference].light, fillOpacity: countryOpacity, }
+
+
   return (
     <div ref={containerRef}>
+      {console.log(mapHeight)}
       <MapContainer
+        key={mapHeight}
         maxBounds={USbounds}
         maxBoundsViscosity={1.0}
         ref={mapRef}
-        style={{ height: `${calculateHeight()}vh`, width: '100%' }}
+        style={{ height: `${mapHeight}vh`, width: '100%' }}
         zoomSnap={.25}
         zoomDelta={.5}
         minZoom={2}
@@ -756,27 +821,55 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
           url='https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png'
         />
 
-        {selectedConference == 'NCAA' && teamsOrCapitals.teams ?
+        {selectedConference == 'NCAA' && mapElements.teams ?
           filteredConferenceList.map((conference) => conference.schools.map((school) => (
-            <Marker key={`${school.name}-${school.id}`} position={[Number(school.latitude), Number(school.longitude)]}
-              icon={conferenceIcons[conference.conference] || myIcon} zIndexOffset={1000}>
-              <Popup>
-                {school.name} - {school.city}, {school.state}
-              </Popup>
-            </Marker>
+            <>
+              {mapElements.teams ?
+                <Marker key={`${school.name}-${school.id}`} position={[Number(school.latitude), Number(school.longitude)]}
+                  icon={conferenceIcons[conference.conference] || myIcon} zIndexOffset={1000}>
+                  <Popup>
+                    {school.name} - {school.city}, {school.state}
+                  </Popup>
+                </Marker>
+                : null
+              }
+              {mapElements.confCountry ?
+                <Circle
+                  center={[Number(school.latitude), Number(school.longitude)]}
+                  pathOptions={circleOptions}
+                  radius={CircleRadius}
+                  stroke={false} 
+                  />
+                : null
+              }
+            </>
           ))
           )
-          : teamsOrCapitals.teams &&
+          :
           filteredConferenceList.map((conference) => conference.schools.map((school) => (
-            <Marker key={`${school.name}-${school.id}`} position={[Number(school.latitude), Number(school.longitude)]}
-              icon={schoolIcons[school.name]} zIndexOffset={1000}>
-              <Popup>
-                {school.name} - {school.city}, {school.state}
-              </Popup>
-            </Marker>
+            <>
+              {mapElements.teams ?
+                <Marker key={`${school.name}-${school.id}`} position={[Number(school.latitude), Number(school.longitude)]}
+                  icon={schoolIcons[school.name]} zIndexOffset={1000}>
+                  <Popup>
+                    {school.name} - {school.city}, {school.state}
+                  </Popup>
+                </Marker>
+                : null
+              }
+              {mapElements.confCountry ?
+                <Circle
+                  center={[Number(school.latitude), Number(school.longitude)]}
+                  pathOptions={circleOptions}
+                  radius={CircleRadius}
+                  stroke={false} 
+                  />
+                : null
+              }
+            </>
           ))
           )}
-        {teamsOrCapitals.capitals && filteredConferenceList.map((conference) => (
+        {mapElements.capitals && filteredConferenceList.map((conference) => (
           <Marker key={`${conference.capital.name}-${conference.id}`}
             position={[Number(conference.capital.latitude), Number(conference.capital.longitude)]}
             icon={conferenceIcons[conference.conference]} zIndexOffset={500}>
@@ -786,15 +879,21 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
           </Marker>
         ))}
         {filteredConferenceList.map((conference) => (conference.schools.map((school) => (
-          school.name.includes('Hawai') && teamsOrCapitals.teams ? <HawaiiMapOverlay school={school} schoolIcons={schoolIcons} /> : null)
+          school.name.includes('Hawai') && mapElements.teams ?
+            <HawaiiMapOverlay school={school} schoolIcons={schoolIcons} conference={conference} lineOptions={lineOptions} />
+            : null)
         )))}
+
+        {mapElements.lines && <Polyline pathOptions={lineOptions} positions={schoolToCenterLines} />}
       </MapContainer>
     </div>
   )
 };
 
-const HawaiiMapOverlay = ({ school, schoolIcons }) => {
-  const hawaiiCenter = [20.7984, -157]; // Center coordinates for Hawaii
+const HawaiiMapOverlay = ({ school, schoolIcons, conference, lineOptions }) => {
+  const hawaiiCenter = [20.7984, -157];
+
+  const lineToCenter = [hawaiiCenter, [Number(conference.capital.latitude), Number(conference.capital.longitude)]]
 
   const calculateHeight = () => {
     if (vpWidth < 768) return 12;
@@ -830,6 +929,7 @@ const HawaiiMapOverlay = ({ school, schoolIcons }) => {
       />
       <Marker key={school.id} position={[Number(school.latitude), Number(school.longitude)]} icon={schoolIcons[school.name]}>
       </Marker>
+      <Polyline pathOptions={lineOptions} positions={lineToCenter} />
     </MapContainer>
   );
 };

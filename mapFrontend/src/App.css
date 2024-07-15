@@ -52,6 +52,7 @@ body {
     height: 2rem;
 }
 
+
 @media screen and (min-width: 768px){
     .dropdown-menu-conferences {
         width: 26rem;
@@ -60,12 +61,6 @@ body {
 
 .sport-selection-img {
     height: 1rem;
-}
-
-.nav-item {
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
 
 .searchbar {
@@ -277,6 +272,15 @@ body {
     margin: auto;
 }
 
+.more-circle::marker {
+    content: '';
+    margin-left: 10px;
+    height: 24px;
+    display: inline-block;
+    vertical-align: middle;
+
+}
+
 .more-button:hover {
     background-color: #f1f1f1;
 }
@@ -330,11 +334,11 @@ body {
     box-shadow: none;
 }
 
-.autoscroll-speed-container {
+.map-control-plusminus-container {
     margin-left: 1rem;
 }
 
-.autoscroll-speed-btn {
+.plusminus-btn {
     display: inline;
     font-size: medium;
     color: #f1f1f1;
@@ -346,18 +350,18 @@ body {
     margin: 0;
 }
 
-.autoscroll-speed-btn:hover {
+.plusminus-btn:hover {
     cursor: pointer;
     color: #555;
     background-color: #f1f1f1;
 }
 
-.autoscroll-speed-btn:focus {
+.plusminus-speed-btn:focus {
     outline: none;
     box-shadow: none;
 }
 
-.autoscroll-speed-display {
+.plusminus-display {
     display: inline;
     margin-left: 1rem;
 }

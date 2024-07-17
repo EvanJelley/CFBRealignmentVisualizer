@@ -373,7 +373,15 @@ body {
 .chart-details-container {
     border: 1px solid rgb(107, 135, 165);
     border-radius: 20px;
-    overflow: hidden;
+    overflow: scroll;
+    height: 90vh;
+}
+
+.ind-conf-detail-container {
+    margin: 0;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid rgb(107, 135, 165);
 }
 
 /* Conference Detail */

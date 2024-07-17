@@ -55,10 +55,10 @@ const chartOptions = {
     y: {
       title: {
         display: true,
-        text: 'Miles', // Label for the y-axis
-        color: '#00254c', // Optional: you can style the label color
+        text: 'Miles',
+        color: '#00254c',
         font: {
-          size: 16 // Optional: you can set the font size
+          size: 16
         }
       }
     },
@@ -76,6 +76,7 @@ function App() {
   const [schoolIcons, setSchoolIcons] = useState({})
   const [conferenceColors, setConferenceColors] = useState([])
   const [chartData, setChartData] = useState({})
+  const [ballImages, setBallImages] = useState({})
 
   const [animate, setAnimate] = useState(false)
   const [redrawTimelineBool, setRedrawTimelineBool] = useState(false)
@@ -145,6 +146,28 @@ function App() {
       });
       setSchoolIcons(schoolIcons);
 
+      const loadBallImages = async () => {
+        const footballImg = new Image();
+        footballImg.src = footballImage;
+        footballImg.width = 15;
+        footballImg.height = 15;
+        await new Promise((resolve, reject) => {
+          footballImg.onload = resolve;
+          footballImg.onerror = reject;
+        });
+
+        const basketballImg = new Image();
+        basketballImg.src = basketballImage;
+        basketballImg.width = 15;
+        basketballImg.height = 15;
+        await new Promise((resolve, reject) => {
+          basketballImg.onload = resolve;
+          basketballImg.onerror = reject;
+        });
+        setBallImages({ football: footballImg, basketball: basketballImg });
+      }
+      loadBallImages();
+
     } catch (error) {
       setHasError(true)
       console.error(error)
@@ -154,60 +177,50 @@ function App() {
   }
 
   { /* Chart Builder */ }
-  // useEffect(() => {
-  //   const loadImages = async () => {
-  //     const footballImg = new Image();
-  //     footballImg.src = footballImage;
-  //     footballImg.width = 15;
-  //     footballImg.height = 15;
-  //     await new Promise((resolve, reject) => {
-  //       footballImg.onload = resolve;
-  //       footballImg.onerror = reject;
-  //     });
+  useEffect(() => {
+    const setCharts = async () => {
 
-  //     const basketballImg = new Image();
-  //     basketballImg.src = basketballImage;
-  //     basketballImg.width = 15;
-  //     basketballImg.height = 15;
-  //     await new Promise((resolve, reject) => {
-  //       basketballImg.onload = resolve;
-  //       basketballImg.onerror = reject;
-  //     });
+      let selectedConferenceList = [];
+      if (sport === 'football') {
+        selectedConferenceList = conferenceList.filter((conference) =>
+          selectedConferences.includes(conference.conference) && conference.football);
+      } else {
+        selectedConferenceList = conferenceList.filter((conference) =>
+          selectedConferences.includes(conference.conference) && conference.basketball);
+      }
 
-  //     let selectedConferenceList = [];
-  //     if (sport === 'football') {
-  //       selectedConferenceList = conferenceList.filter((conference) =>
-  //         selectedConferences.includes(conference.conference) && conference.football);
-  //     } else {
-  //       selectedConferenceList = conferenceList.filter((conference) =>
-  //         selectedConferences.includes(conference.conference) && conference.basketball);
-  //     }
 
-  //     selectedConferenceList.map((wholeConference) => {
-  //       setChartData({
-  //         labels: wholeConference ? wholeConference.map((conference) => conference.year) : [],
-  //         datasets: [
-  //           {
-  //             label: 'Average Distance Between Schools',
-  //             data: wholeConference ? wholeConference.map((conference) => conference.avgDistanceBetweenSchools) : [],
-  //             pointStyle: wholeConference ? wholeConference.map((conference) =>
-  //               conference.year === selectedYear ? sport === 'football' ? footballImg : basketballImg : false) : [],
-  //             borderColor: conferenceColors[wholeConference.conference] ? conferenceColors[wholeConference.conference].main : '#000',
-  //           },
-  //           {
-  //             label: 'Average Distance from Center',
-  //             data: wholeConference ? wholeConference.map((conference) => conference.avgDistanceFromCenter) : [],
-  //             pointStyle: wholeConference ? wholeConference.map((conference) =>
-  //               conference.year === selectedYear ? sport === 'football' ? footballImg : basketballImg : false) : [],
-  //             borderColor: conferenceColors[wholeConference.conference] ? conferenceColors[wholeConference.conference].light : '#000', // Default to black if undefined
-  //           },
-  //         ],
-  //       });
-  //     });
-  //   };
+      let conferenceCharts = {};
 
-  //   loadImages().catch(console.error);
-  // }, [conferenceList, selectedConferences, sport, selectedYear]);
+      selectedConferences.map((conferenceName) => {
+        let conference = selectedConferenceList.filter((conference) => conference.conference == conferenceName);
+        console.log(conferenceColors[conference.conference])
+        let confData = {
+          labels: conference ? conference.map((conf) => conf.year) : [],
+          datasets: [
+            {
+              label: 'Average Distance Between Schools',
+              data: conference ? conference.map((conf) => conf.avgDistanceBetweenSchools) : [],
+              pointStyle: conference ? conference.map((conf) =>
+                conf.year === selectedYear ? sport === 'football' ? ballImages.football : ballImages.basketball : false) : [],
+              borderColor: conferenceColors[conferenceName] ? conferenceColors[conferenceName].main : '#000',
+            },
+            {
+              label: 'Average Distance from Center',
+              data: conference ? conference.map((conf) => conf.avgDistanceFromCenter) : [],
+              pointStyle: conference ? conference.map((conf) =>
+                conf.year === selectedYear ? sport === 'football' ? ballImages.football : ballImages.basketball : false) : [],
+              borderColor: conferenceColors[conferenceName] ? conferenceColors[conferenceName].light : '#000',
+            },
+          ],
+        };
+        conferenceCharts[conferenceName] = confData;
+      });
+      setChartData(conferenceCharts);
+    };
+
+    setCharts().catch(console.error);
+  }, [selectedConferences, sport, selectedYear]);
 
   const getImageDimmensions = (url, pixels) => {
     return new Promise((resolve, reject) => {
@@ -250,7 +263,6 @@ function App() {
     const conferenceName = button.getAttribute('data-conf-name');
     let newConferenceList = []
     selectedConferences.includes(conferenceName) ? newConferenceList = selectedConferences.filter((conf) => conf !== conferenceName) : newConferenceList = [...selectedConferences, conferenceName]
-    console.log(newConferenceList)
     setSelectedConferences(newConferenceList)
   }
 
@@ -272,16 +284,16 @@ function App() {
   }
 
   const conferenceFilter = () => {
-    console.log("called")
     if (sport == 'football') {
       let filteredList = conferenceList.filter((conference) => {
         return conference.year == selectedYear && selectedConferences.includes(conference.conference) && conference.football
       })
       setFilteredConferenceList(filteredList)
     } else {
-      let filteredList = conferenceList.map((conference) => {
+      let filteredList = conferenceList.filter((conference) => {
         return conference.year == selectedYear && selectedConferences.includes(conference.conference) && conference.basketball
       })
+      console.log(filteredList)
       setFilteredConferenceList(filteredList)
     };
     splitConferenceMonitor()
@@ -289,9 +301,8 @@ function App() {
 
 
   useEffect(() => {
-    console.log("useEffect")
     conferenceFilter()
-  }, [selectedYear, sport, selectedConferences ])
+  }, [selectedYear, sport, selectedConferences])
 
   useEffect(() => {
     let years = []
@@ -368,7 +379,6 @@ function App() {
         <p>Loading...</p>
         :
         <>
-          {/* {console.log(filteredConferenceList)} */}
           <NavBar conferenceNames={conferenceNames}
             conferenceYears={conferenceYears}
             selectConference={selectConferenceHandler}
@@ -409,22 +419,29 @@ function App() {
               </div>
             </div>
             <div className='col-12 col-md-5'>
-              {/* <div className='chart-details-container'>
-                <ConferenceDetails
-                  conference={filteredConferenceList[0]}
-                  confLogos={conferenceLogos}
-                  confColors={conferenceColors}
-                  selectedConferences={selectedConferences} />
-                <div className='chart-container'>
-                  <Line data={chartData} options={chartOptions} />
-                </div>
+              <div className='chart-details-container'>
+                {selectedConferences.map((conference) => (
+                  chartData[conference] && Number(chartData[conference].labels[0]) <= selectedYear &&
+                  <div className='ind-conf-detail-container' style={{ backgroundColor: `${conferenceColors[conference].light}10`, }}>
+                    <ConferenceDetails
+                      conference={filteredConferenceList.filter((conferenceObject) => conferenceObject.conference == conference)[0]}
+                      confLogos={conferenceLogos}
+                      confColors={conferenceColors}
+                      selectedConference={conference} />
+                    <div className='chart-container'>
+                      <Line data={chartData[conference]} options={chartOptions} />
+                    </div>
+                  </div>
+                ))}
+                {/* 
                 <ChartControls
                   setAnimation={animationHandler}
                   animate={animate}
                   firstYear={conferenceYears[0]}
                   lastYear={conferenceYears[conferenceYears.length - 1]}
                   setYear={yearMapButtonHandler} />
-              </div> */}
+                   */}
+              </div>
             </div>
           </div>
         </>
@@ -475,7 +492,11 @@ function MapControls({ setAnimation, animate, firstYear, lastYear, setYear, sele
             <h3 className='map-controls-header'>Map Controls</h3>
 
             <button className='btn btn-secondary map-more-control' onClick={(e) => { e.stopPropagation(); setMapDisplayOptions("confCountry"); }}>
-              Show "{selectedConferences.length > 1 ? "Conference Countries" : `${selectedConferences[0]} Country`} {mapDisplayOptions.confCountry ? <span className='option-check'>&#10003;</span> : null}
+              Show "{selectedConferences.length > 1 ? "Conference Countries" : `${selectedConferences[0]} Country`}" {mapDisplayOptions.confCountry ? <span className='option-check'>&#10003;</span> : null}
+            </button>
+
+            <button value="both" className='btn btn-secondary map-more-control' onClick={(e) => { e.stopPropagation(); setMapDisplayOptions("lines"); }}>
+              Show Lines to Capital {mapDisplayOptions.lines ? <span className='option-check'>&#10003;</span> : null}
             </button>
 
             <button value="capitalsonly" className='btn btn-secondary map-more-control' onClick={(e) => { e.stopPropagation(); setMapDisplayOptions("capitals"); }}>
@@ -484,10 +505,6 @@ function MapControls({ setAnimation, animate, firstYear, lastYear, setYear, sele
 
             <button value="teamsonly" className='btn btn-secondary map-more-control' onClick={(e) => { e.stopPropagation(); setMapDisplayOptions("teams"); }}>
               Show Teams {mapDisplayOptions.teams ? <span className='option-check'>&#10003;</span> : null}
-            </button>
-
-            <button value="both" className='btn btn-secondary map-more-control' onClick={(e) => { e.stopPropagation(); setMapDisplayOptions("lines"); }}>
-              Show Lines to GeoCenter {mapDisplayOptions.lines ? <span className='option-check'>&#10003;</span> : null}
             </button>
 
             <div className='map-more-control'>
@@ -732,7 +749,6 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
       newCoordObject[conference.conference] = coords;
       newLineObject[conference.conference] = linesToCenter;
     });
-    console.log(newLineObject)
     setSchoolCoordinates(newCoordObject);
     setSchoolToCenterLines(newLineObject);
   }, [filteredConferenceList]);
@@ -818,12 +834,12 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
           attribution='&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>'
           url='https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png'
         />
-
+        {console.log(filteredConferenceList)}
         {filteredConferenceList.map((conference) => conference.schools.map((school) => (
           <Fragment key={`${school.name}-${school.id}`}>
             {mapElements.teams ?
               <Marker position={[Number(school.latitude), Number(school.longitude)]}
-                icon={conferenceIcons[conference.conference] || myIcon} zIndexOffset={1000}>
+                icon={schoolIcons[school.name] || myIcon} zIndexOffset={1000}>
                 <Popup>
                   {school.name} - {school.city}, {school.state}
                 </Popup>
@@ -858,10 +874,8 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
             : null)
         )))} */}
 
-        {console.log(schoolToCenterLines)}
-        {/* {mapElements.lines && selectedConferences.map((conference) => (
-          // console.log(schoolToCenterLines),
-          <Polyline pathOptions={mapStyles[conference].lineOptions || standardLineOptions} positions={schoolToCenterLines[conference]} />))} */}
+        {mapElements.lines && selectedConferences.map((conference) => (
+          schoolToCenterLines[conference] && <Polyline pathOptions={mapStyles[conference].lineOptions || standardLineOptions} positions={schoolToCenterLines[conference]} />))}
 
       </MapContainer>
     </div>
@@ -912,53 +926,54 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
 //   );
 // };
 
-// function ConferenceDetails({ conference, confLogos, confColors, selectedConference }) {
-//   return (
-//     <div className='conference-details'>
-//       <div className='conference-details-main'>
-//         <h3 className='conference-details-conference'>
-//           <span className='conference-details-category-header'>Conference:</span>
-//           <img className='conference-details-conference-img' src={confLogos[conference.conference]} />
-//         </h3>
-//         <h3 className='conference-details-year'>
-//           <span className='conference-details-category-header'>
-//             Year:
-//           </span>
-//           <span className='conference-details-category-header-year'>
-//             {conference.year}
-//           </span>
-//         </h3>
-//       </div>
-//       <div className='conference-details-specific'>
-//         <table className='conference-details-table'>
-//           <tbody>
-//             <tr>
-//               <td className='conference-details-category'>Proposed Capital</td>
-//               <td className='conference-details-item'>{conference.capital.name}, {conference.capital.state}</td>
-//             </tr>
-//             <tr>
-//               <td className='conference-details-category'>Number of Schools</td>
-//               <td className='conference-details-item'>{conference.schools.length}</td>
-//             </tr>
-//             <tr>
-//               <td className='conference-details-category'>
-//                 <span className="conference-details-color-square" style={{ backgroundColor: confColors[selectedConference].main }}></span>
-//                 Avg. Distance Between Schools
-//               </td>
-//               <td className='conference-details-item'>{Math.round(conference.avgDistanceBetweenSchools)} miles</td>
-//             </tr>
-//             <tr>
-//               <td className='conference-details-category'>
-//                 <span className="conference-details-color-square" style={{ backgroundColor: confColors[selectedConference].light }}></span>
-//                 Avg. Distance from GeoCenter
-//               </td>
-//               <td className='conference-details-item'>{Math.round(conference.avgDistanceFromCenter)} miles</td>
-//             </tr>
-//           </tbody>
-//         </table>
-//       </div>
-//     </div>
-//   )
-// };
+function ConferenceDetails({ conference, confLogos, confColors, selectedConference }) {
+
+  return (conference &&
+    <div className='conference-details'>
+      <div className='conference-details-main'>
+        <h3 className='conference-details-conference'>
+          <span className='conference-details-category-header'>Conference:</span>
+          <img className='conference-details-conference-img' src={confLogos[conference.conference]} />
+        </h3>
+        <h3 className='conference-details-year'>
+          <span className='conference-details-category-header'>
+            Year:
+          </span>
+          <span className='conference-details-category-header-year'>
+            {conference.year}
+          </span>
+        </h3>
+      </div>
+      <div className='conference-details-specific'>
+        <table className='conference-details-table'>
+          <tbody>
+            <tr>
+              <td className='conference-details-category'>Proposed Capital</td>
+              <td className='conference-details-item'>{conference.capital.name}, {conference.capital.state}</td>
+            </tr>
+            <tr>
+              <td className='conference-details-category'>Number of Schools</td>
+              <td className='conference-details-item'>{conference.schools.length}</td>
+            </tr>
+            <tr>
+              <td className='conference-details-category'>
+                <span className="conference-details-color-square" style={{ backgroundColor: confColors[selectedConference].main }}></span>
+                Avg. Distance Between Schools
+              </td>
+              <td className='conference-details-item'>{Math.round(conference.avgDistanceBetweenSchools)} miles</td>
+            </tr>
+            <tr>
+              <td className='conference-details-category'>
+                <span className="conference-details-color-square" style={{ backgroundColor: confColors[selectedConference].light }}></span>
+                Avg. Distance from GeoCenter
+              </td>
+              <td className='conference-details-item'>{Math.round(conference.avgDistanceFromCenter)} miles</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+};
 
 export default App

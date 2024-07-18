@@ -28,6 +28,13 @@ body {
     display: none;
 }
 
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
 /* Nav Styles */
 .navbar-main {
     background-color: rgb(0,37,76);
@@ -44,7 +51,7 @@ body {
 }
 
 .dropdown-item {
-    margin: auto;
+    margin: 0;
     padding: 0.5rem 1rem;
 }
 
@@ -52,11 +59,24 @@ body {
     height: 2rem;
 }
 
+.list-inline-item:not(:last-child) {
+    margin: 0;
+}
+
 
 @media screen and (min-width: 768px){
     .dropdown-menu-conferences {
         width: 26rem;
     }
+}
+
+.dropdown-menu-conferences button:focus {
+    border: none;
+    outline: none;  
+}
+
+.dropdown-menu-conferences {
+    padding: 0.5rem 1rem;
 }
 
 .sport-selection-img {

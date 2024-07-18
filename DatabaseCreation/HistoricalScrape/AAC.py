@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 
 # Define the URL
-########  URL = "https://en.wikipedia.org/wiki/American_Athletic_Conference"
+URL = "https://en.wikipedia.org/wiki/American_Athletic_Conference"
 
 # Pull and clean dataframes
 dfs = scrape.getDataFrames(0, 3, URL)

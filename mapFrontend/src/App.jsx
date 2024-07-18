@@ -86,7 +86,7 @@ function App() {
   const [confCountryOpacity, setConfCountryOpacity] = useState(0.1)
 
 
-  const [conferenceNames, setConferenceNames] = useState([])
+  const [conferenceNames, setConferenceNames] = useState(["SEC", "Big Ten", "ACC", "Big 12", "Pac 12", "Mountain West", "Sun Belt", "CUSA", "MAC", "NCAA"])
   const [selectedConferences, setSelectedConferences] = useState([])
   const [conferenceYears, setConferenceYears] = useState([])
   const [selectedYear, setSelectedYear] = useState('')
@@ -100,12 +100,11 @@ function App() {
       const response = await axios.get(APIURL + '/api/conferencebyyear/')
       setConferenceList(response.data)
 
-      let conferenceNameList = []
+      let conferenceNameList = conferenceNames
       response.data.map((conference) => {
         conferenceNameList.includes(conference.conference) ? null :
           conferenceNameList.push(conference.conference)
       });
-      conferenceNameList.push('NCAA')
       setConferenceNames(conferenceNameList)
 
       setSelectedConferences([conferenceNameList[0]])
@@ -262,8 +261,47 @@ function App() {
     const button = e.target.closest('button');
     const conferenceName = button.getAttribute('data-conf-name');
     let newConferenceList = []
-    selectedConferences.includes(conferenceName) ? newConferenceList = selectedConferences.filter((conf) => conf !== conferenceName) : newConferenceList = [...selectedConferences, conferenceName]
+    switch (conferenceName) {
+      case 'Power 5':
+        newConferenceList = ['SEC', 'Big Ten', 'ACC', 'Big 12', 'Pac 12']
+        break;
+      case "Power 4":
+        newConferenceList = ['SEC', 'Big Ten', 'ACC', 'Big 12']
+        break;
+      case "Group of 5":
+        newConferenceList = ['Mountain West', 'Sun Belt', 'CUSA', 'MAC']
+        break;
+      case "Big 2":
+        newConferenceList = ['SEC', 'Big Ten']
+        break;
+      case "Basketball Conferences":
+        newConferenceList = ["Big East", "ACC", "Big Ten", "Big 12"]
+        setSport('basketball')
+        break;
+      case "NCAA":
+        newConferenceList = ["SEC", "Big Ten", "ACC", "Big 12", "Pac 12", "Mountain West", "Sun Belt", "CUSA", "MAC"]
+        break;
+
+      default:
+        selectedConferences.includes(conferenceName) ? newConferenceList = selectedConferences.filter((conf) => conf !== conferenceName) : newConferenceList = [...selectedConferences, conferenceName]
+        newConferenceList.length === 0 ? newConferenceList = [conferenceName] : null
+        break;
+    }
     setSelectedConferences(newConferenceList)
+  }
+
+  const preprogrammedAnimationsHandler = (e) => {
+    const button = e.target.closest('button');
+    const animation = button.getAttribute('data-anim-name');
+    switch (animation) {
+      case 'Modern Expansion':
+        yearMapButtonHandler('2009')
+        // setSelectedConferences(['SEC', 'Big Ten', 'Big 12', 'Pac 12'])
+        // setTimeout(setAnimate(true), 10000)
+        break;
+      default:
+        break;
+    }
   }
 
   const selectYearHandler = (year) => {
@@ -376,7 +414,7 @@ function App() {
   return (
     <>
       {isLoading ?
-        <p>Loading...</p>
+        <p className='loading'>Loading...</p>
         :
         <>
           <NavBar conferenceNames={conferenceNames}
@@ -386,7 +424,10 @@ function App() {
             conferenceLogosObject={conferenceLogos}
             selectedYear={selectedYear}
             sportHandler={sportHandler}
-            splitConference={splitConference} />
+            splitConference={splitConference}
+            selectedConferences={selectedConferences}
+            sport={sport} 
+            preprogrammedAnimations={preprogrammedAnimationsHandler}/>
           <div className='row map-chart-row'>
             <div className='col-12 col-md-7'>
               <div className="map-container">
@@ -542,7 +583,7 @@ function AutoScrollButton({ setAnimation, animate }) {
   )
 }
 
-function NavBar({ conferenceNames, selectConference, searchYears, conferenceLogosObject, sportHandler }) {
+function NavBar({ conferenceNames, selectConference, searchYears, conferenceLogosObject, sportHandler, selectedConferences, sport, preprogrammedAnimations }) {
   return (
     <>
       <nav className="navbar navbar-main navbar-expand-lg" >
@@ -562,16 +603,22 @@ function NavBar({ conferenceNames, selectConference, searchYears, conferenceLogo
                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                   Conferences
                 </a>
-                <ul className="dropdown-menu list-inline dropdown-menu-conferences" aria-labelledby="navbarDropdown">
-                  {conferenceNames.map((conferenceName) => (
-                    <li key={conferenceName} className='list-inline-item'>
-                      <button style={{ height: "3.7rem" }} onClick={selectConference} data-conf-name={conferenceName} className='dropdown-item'>
-                        <img src={conferenceLogosObject[conferenceName]} alt={conferenceName}
-                          className='conference-selection-img' />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                <div className="conf-select-container">
+                  <ul className="dropdown-menu list-inline dropdown-menu-conferences" aria-labelledby="navbarDropdown">
+                    {conferenceNames.map((conferenceName) => (
+                      <li key={conferenceName} className='list-inline-item'>
+                        <button
+                          style={{ height: "3.9rem", backgroundColor: selectedConferences.includes(conferenceName) ? "#f1f1f1" : 'white' }}
+                          onClick={(e) => { e.stopPropagation(); selectConference(e) }}
+                          data-conf-name={conferenceName}
+                          className='dropdown-item'>
+                          <img src={conferenceLogosObject[conferenceName]} alt={conferenceName}
+                            className='conference-selection-img' />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </li>
               <li className="nav-item dropdown">
                 <a className="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
@@ -582,11 +629,64 @@ function NavBar({ conferenceNames, selectConference, searchYears, conferenceLogo
                   <li key={'football'} className='dropdown-item'>
                     <button onClick={sportHandler} className='dropdown-item'>
                       <img src={footballImage} alt='football' className='sport-selection-img' /> Football
+                      {sport == "football" ? <span className='option-check'>&#10003;</span> : null}
                     </button>
                   </li>
                   <li key={'basketball'} className='dropdown-item'>
                     <button onClick={sportHandler} className='dropdown-item'>
                       <img src={basketballImage} alt='basketball' className='sport-selection-img' /> Basketball
+                      {sport == "basketball" ? <span className='option-check'>&#10003;</span> : null}
+                    </button>
+                  </li>
+                </ul>
+              </li>
+              <li className="nav-item dropdown">
+                <a className="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  QuickSelect Conferences
+                </a>
+                <ul className="dropdown-menu" aria-labelledby="navbarDropdown">
+                  <li key={'Power5'} className='dropdown-item'>
+                    <button onClick={selectConference} className='dropdown-item' data-conf-name="Power 5">
+                      Power 5
+                    </button>
+                  </li>
+                  <li key={'Power4'} className='dropdown-item'>
+                    <button onClick={selectConference} className='dropdown-item' data-conf-name="Power 4">
+                      Power 4
+                    </button>
+                  </li>
+                  <li key={'Group5'} className='dropdown-item'>
+                    <button onClick={selectConference} className='dropdown-item' data-conf-name="Group of 5">
+                      Group of 5
+                    </button>
+                  </li>
+                  <li key={'Big2'} className='dropdown-item'>
+                    <button onClick={selectConference} className='dropdown-item' data-conf-name="Big 2">
+                      Big 2
+                    </button>
+                  </li>
+                  <li key={'Basketball'} className='dropdown-item'>
+                    <button onClick={selectConference} className='dropdown-item' data-conf-name="Basketball Conferences">
+                      Basketball Conferences
+                    </button>
+                  </li>
+                  <li key={'NCAA'} className='dropdown-item'>
+                    <button onClick={selectConference} className='dropdown-item' data-conf-name="NCAA">
+                      NCAA
+                    </button>
+                  </li>
+                </ul>
+              </li>
+              <li className="nav-item dropdown">
+                <a className="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  QuickSelect Animations
+                </a>
+                <ul className="dropdown-menu" aria-labelledby="navbarDropdown">
+                  <li key={'Power5'} className='dropdown-item'>
+                    <button onClick={preprogrammedAnimations} className='dropdown-item' data-anim-name="Modern Expansion">
+                      Modern Expansion
                     </button>
                   </li>
                 </ul>
@@ -868,11 +968,11 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
             </Popup>
           </Marker>
         ))}
-        {/* {filteredConferenceList.map((conference) => (conference.schools.map((school) => (
-          school.name.includes('Hawai') && mapElements.teams ?
-            <HawaiiMapOverlay school={school} schoolIcons={schoolIcons} conference={conference} lineOptions={mapStyles[conference.conference].lineOptions} />
+        {filteredConferenceList.map((conference) => (conference.schools.map((school) => (
+          school.name.includes('Hawai') ?
+            <HawaiiMapOverlay school={school} schoolIcons={schoolIcons} conference={conference} lineOptions={mapStyles[conference.conference].lineOptions} circleOptions={mapStyles[conference.conference].circleOptions} mapElements={mapElements} />
             : null)
-        )))} */}
+        )))}
 
         {mapElements.lines && selectedConferences.map((conference) => (
           schoolToCenterLines[conference] && <Polyline pathOptions={mapStyles[conference].lineOptions || standardLineOptions} positions={schoolToCenterLines[conference]} />))}
@@ -882,49 +982,54 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
   )
 };
 
-// const HawaiiMapOverlay = ({ school, schoolIcons, conference, lineOptions }) => {
-//   const hawaiiCenter = [20.7984, -157];
+const HawaiiMapOverlay = ({ school, schoolIcons, conference, lineOptions, circleOptions, mapElements }) => {
+  const hawaiiCenter = [20.7984, -157];
 
-//   const lineToCenter = [hawaiiCenter, [Number(conference.capital.latitude), Number(conference.capital.longitude)]]
+  const lineToCenter = [hawaiiCenter, [Number(conference.capital.latitude), Number(conference.capital.longitude)]]
 
-//   const calculateHeight = () => {
-//     if (vpWidth < 768) return 12;
-//     if (vpWidth < 1500) return 12;
-//     return 37;
-//   };
+  const calculateHeight = () => {
+    if (vpWidth < 768) return 12;
+    if (vpWidth < 1500) return 12;
+    return 37;
+  };
 
-//   const calculateWidth = () => {
-//     if (vpWidth < 768) return 12;
-//     if (vpWidth < 1500) return 12;
-//     return 37;
-//   }
+  const calculateWidth = () => {
+    if (vpWidth < 768) return 12;
+    if (vpWidth < 1500) return 12;
+    return 37;
+  }
 
-//   const calculateZoomLevel = () => {
-//     if (vpWidth < 768) return 4;
-//     if (vpWidth < 1500) return 4;
-//     return 6;
-//   };
+  const calculateZoomLevel = () => {
+    if (vpWidth < 768) return 4;
+    if (vpWidth < 1500) return 4;
+    return 6;
+  };
 
-//   return (
-//     <MapContainer
-//       className='hawaii-map-overlay'
-//       center={hawaiiCenter}
-//       zoom={calculateZoomLevel()}
-//       style={{ height: `${calculateHeight()}vh`, width: `${calculateWidth()}vw`, position: 'absolute', bottom: '10px', left: '10px', zIndex: 1000 }}
-//       scrollWheelZoom={false}
-//       dragging={false}
-//       zoomControl={false}
-//       doubleClickZoom={false}
-//     >
-//       <TileLayer
-//         url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' id='HawaiiAttribution'
-//       />
-//       <Marker key={school.id} position={[Number(school.latitude), Number(school.longitude)]} icon={schoolIcons[school.name]}>
-//       </Marker>
-//       <Polyline pathOptions={lineOptions} positions={lineToCenter} />
-//     </MapContainer>
-//   );
-// };
+  let overlayBoolean = mapElements.teams || mapElements.lines || mapElements.confCountry;
+
+  return (
+    <>
+      {overlayBoolean &&
+        <MapContainer
+          className='hawaii-map-overlay'
+          center={hawaiiCenter}
+          zoom={calculateZoomLevel()}
+          style={{ height: `${calculateHeight()}vh`, width: `${calculateWidth()}vw`, position: 'absolute', bottom: '10px', left: '10px', zIndex: 1000 }}
+          scrollWheelZoom={false}
+          dragging={false}
+          zoomControl={false}
+          doubleClickZoom={false}
+        >
+          <TileLayer
+            url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' id='HawaiiAttribution'
+          />
+          {mapElements.teams && <Marker key={school.id} position={[Number(school.latitude), Number(school.longitude)]} icon={schoolIcons[school.name]} />}
+          {mapElements.confCountry && <Circle center={[Number(school.latitude), Number(school.longitude)]} pathOptions={circleOptions} radius={200 * 1609} stroke={false} />}
+          {mapElements.lines && <Polyline pathOptions={lineOptions} positions={lineToCenter} />}
+        </MapContainer>}
+    </>
+  );
+};
 
 function ConferenceDetails({ conference, confLogos, confColors, selectedConference }) {
 

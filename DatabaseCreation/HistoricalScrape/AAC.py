@@ -15,3 +15,6 @@ cleanedDFs = scrape.cleanDataFrames(dfs)
 combinedDFs = scrape.combineDataFrames(cleanedDFs)
 
 print(combinedDFs)
+
+# Save the dataframes to a csv
+combinedDFs.to_csv("AAC.csv", index=False)

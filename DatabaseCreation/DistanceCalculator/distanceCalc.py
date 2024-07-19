@@ -449,6 +449,82 @@ def calculateGeoCenter(points):
     currentPoint = (math.degrees(currentPoint[0]), math.degrees(currentPoint[1]))
     return currentPoint
 
+
+def readInSchools():
+    conferencesByEraObjects = []
+    cities = createMajorCitiesList()
+
+    # Find all the files in the directory
+    for file in os.listdir("ConferenceByEraDB"):
+        if file.endswith(".db") and file != "GeoCenters.db" and file != "ConferenceSummary.db":
+
+            conf = file[:-3] 
+
+            print("Processing " + file + "...")
+
+            # Connect to the database
+            conn = sqlite3.connect("ConferenceByEraDB/" + file)
+            cursor = conn.cursor()
+
+            # Select table names from database
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+
+            tables = cursor.fetchall()
+
+            # Itereate tables
+            for table in tables:
+                # Connect to table
+                # print(f"Processing {table[0]}")
+                cursor.execute(f"SELECT * FROM {table[0]}")
+                
+                # Make conference era object
+                confEra = conference(conf, table[0][6:10], table[0][11:])
+                rows = cursor.fetchall()
+
+                # Add the schools to the conference object
+                for row in rows:
+                    name = row[0]
+                    location = row[1]
+                    if row[2] == "1":
+                        football = True
+                    else:
+                        football = False
+                    if row[3] == "1":
+                        basketball = True
+                    else:
+                        basketball = False
+                    coordinates = row[4]
+                    latitude, longitude = coordinateCleaner(coordinates)
+                    latitude = convertDegreesMinutesSecondsToDecimal(latitude)
+                    longitude = convertDegreesMinutesSecondsToDecimal(longitude)
+                    schoolObj = school(name, location, football, basketball, latitude, longitude)
+                    confEra.addSchool(schoolObj)
+                
+                # Find the schools that play basketball and football
+                confEra.findSportSpecificSchools()
+
+                # Calculate the center of the conference
+                confEra.findGeoCenter()
+
+                # Find the capital of the conference
+                confEra.findCapital(cities)
+
+                # Find the average distance between the schools
+                confEra.findAvgDistanceFromOtherSchools()
+
+                # Find the average distance from the center of the conference
+                confEra.findAvgDistanceFromGeoCenter()
+
+                # Add the conference era object to the list of conference era objects
+                conferencesByEraObjects.append(confEra)
+            conn.close()
+
+    return conferencesByEraObjects 
+
+
+
+
+
 # conferenceSummaryDBBuilder()
 
 

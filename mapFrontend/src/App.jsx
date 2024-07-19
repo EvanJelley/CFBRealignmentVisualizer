@@ -84,6 +84,7 @@ function App() {
   const [animationSpeed, setAnimationSpeed] = useState(500)
   const [mapDisplay, setMapDisplay] = useState({ teams: true, capitals: true, lines: true, confCountry: true });
   const [confCountryOpacity, setConfCountryOpacity] = useState(0.1)
+  const [confCountrySize, setConfCountrySize] = useState(200)
 
 
   const [conferenceNames, setConferenceNames] = useState(["SEC", "Big Ten", "ACC", "Big 12", "Pac 12", "Mountain West", "Sun Belt", "CUSA", "MAC", "NCAA"])
@@ -193,7 +194,6 @@ function App() {
 
       selectedConferences.map((conferenceName) => {
         let conference = selectedConferenceList.filter((conference) => conference.conference == conferenceName);
-        console.log(conferenceColors[conference.conference])
         let confData = {
           labels: conference ? conference.map((conf) => conf.year) : [],
           datasets: [
@@ -260,6 +260,7 @@ function App() {
     setAnimate(false)
     const button = e.target.closest('button');
     const conferenceName = button.getAttribute('data-conf-name');
+    console.log(conferenceName)
     let newConferenceList = []
     switch (conferenceName) {
       case 'Power 5':
@@ -281,7 +282,6 @@ function App() {
       case "NCAA":
         newConferenceList = ["SEC", "Big Ten", "ACC", "Big 12", "Pac 12", "Mountain West", "Sun Belt", "CUSA", "MAC"]
         break;
-
       default:
         selectedConferences.includes(conferenceName) ? newConferenceList = selectedConferences.filter((conf) => conf !== conferenceName) : newConferenceList = [...selectedConferences, conferenceName]
         newConferenceList.length === 0 ? newConferenceList = [conferenceName] : null
@@ -295,9 +295,69 @@ function App() {
     const animation = button.getAttribute('data-anim-name');
     switch (animation) {
       case 'Modern Expansion':
-        yearMapButtonHandler('2009')
-        // setSelectedConferences(['SEC', 'Big Ten', 'Big 12', 'Pac 12'])
-        // setTimeout(setAnimate(true), 10000)
+        setSelectedConferences(['SEC', 'Big Ten', 'Big 12', 'Pac 12', 'ACC']);
+        yearMapButtonHandler(2009);
+        setMapDisplay({ teams: false, capitals: true, lines: true, confCountry: true });
+        setConfCountryOpacity(0.5);
+        setConfCountrySize(50);
+        setAnimationSpeed(500);
+        setTimeout(() => {
+          setAnimate(true);
+        }, 2000);
+        break;
+      case 'Death of the Pac 12':
+        setSelectedConferences(['Pac 12', 'Big Ten', 'Big 12', 'ACC']);
+        yearMapButtonHandler(2023);
+        setMapDisplay({ teams: false, capitals: true, lines: true, confCountry: true });
+        setConfCountryOpacity(0.8);
+        setConfCountrySize(100);
+        setAnimationSpeed(1000);
+        setTimeout(() => {
+          setAnimate(true);
+        }, 2000);
+        break;
+      case 'CUSA & The Sun Belt: A Wild Ride':
+        setSelectedConferences(['CUSA', 'Sun Belt']);
+        yearMapButtonHandler(1989);
+        setMapDisplay({ teams: false, capitals: true, lines: true, confCountry: true });
+        setConfCountryOpacity(0.8);
+        setConfCountrySize(50);
+        setAnimationSpeed(300);
+        setTimeout(() => {
+          setAnimate(true);
+        }, 2000);
+        break
+      case 'Big 2 since 32':
+        setSelectedConferences(['SEC', 'Big Ten']);
+        yearMapButtonHandler(1932);
+        setMapDisplay({ teams: false, capitals: true, lines: true, confCountry: true });
+        setConfCountryOpacity(0.8);
+        setConfCountrySize(100);
+        setAnimationSpeed(100);
+        setTimeout(() => {
+          setAnimate(true);
+        }, 2000);
+        break;
+      case 'Truly Mid-American':
+        setSelectedConferences(['MAC']);
+        yearMapButtonHandler(1946);
+        setMapDisplay({ teams: true, capitals:false, lines: false, confCountry: true });
+        setConfCountryOpacity(0.8);
+        setConfCountrySize(150);
+        setAnimationSpeed(100);
+        setTimeout(() => {
+          setAnimate(true);
+        }, 2000);
+        break;
+      case 'What is the Big 12?':
+        setSelectedConferences(['Big 12']);
+        yearMapButtonHandler(1996);
+        setMapDisplay({ teams: true, capitals:true, lines: true, confCountry: true });
+        setConfCountryOpacity(0.6);
+        setConfCountrySize(150);
+        setTimeout(() => {
+          yearMapButtonHandler(2024);
+        }, 3000);
         break;
       default:
         break;
@@ -317,7 +377,7 @@ function App() {
   }
 
   const yearMapButtonHandler = (year) => {
-    setSelectedYear(year)
+    setSelectedYear(Number(year))
     setRedrawTimelineBool(true)
   }
 
@@ -331,7 +391,6 @@ function App() {
       let filteredList = conferenceList.filter((conference) => {
         return conference.year == selectedYear && selectedConferences.includes(conference.conference) && conference.basketball
       })
-      console.log(filteredList)
       setFilteredConferenceList(filteredList)
     };
     splitConferenceMonitor()
@@ -349,6 +408,7 @@ function App() {
     });
     years.sort()
     setConferenceYears(years)
+    console.log(selectedYear)
     years.includes(Number(selectedYear)) ? conferenceFilter() : setSelectedYear(years[0])
   }, [selectedConferences])
 
@@ -406,6 +466,14 @@ function App() {
     }
   }
 
+  const handleConfCountrySize = (value) => {
+    if (value === 'increase') {
+      setConfCountrySize(Math.min((confCountrySize + 10), 300));
+    } else {
+      setConfCountrySize(Math.max((confCountrySize - 10), 50));
+    }
+  }
+
   var myIcon = L.icon({
     iconUrl: APIURL + '/media/images/conf_logos/ncaa.png',
     iconSize: [10, 10],
@@ -426,8 +494,8 @@ function App() {
             sportHandler={sportHandler}
             splitConference={splitConference}
             selectedConferences={selectedConferences}
-            sport={sport} 
-            preprogrammedAnimations={preprogrammedAnimationsHandler}/>
+            sport={sport}
+            preprogrammedAnimations={preprogrammedAnimationsHandler} />
           <div className='row map-chart-row'>
             <div className='col-12 col-md-7'>
               <div className="map-container">
@@ -437,7 +505,8 @@ function App() {
                   selectedConferences={selectedConferences}
                   mapElements={mapDisplay}
                   confColors={conferenceColors}
-                  countryOpacity={confCountryOpacity} />
+                  countryOpacity={confCountryOpacity}
+                  confCountrySize={confCountrySize} />
                 <DraggableTimeline
                   years={conferenceYears}
                   setYear={selectYearHandler}
@@ -456,7 +525,9 @@ function App() {
                   animationSpeed={animationSpeed}
                   mapDisplayOptions={mapDisplay}
                   confCountryOpacity={confCountryOpacity}
-                  setConfCountryOpacity={handleConfCountryOpacity} />
+                  setConfCountryOpacity={handleConfCountryOpacity}
+                  confCountrySize={confCountrySize}
+                  setConfCountrySize={handleConfCountrySize} />
               </div>
             </div>
             <div className='col-12 col-md-5'>
@@ -512,7 +583,7 @@ function ChartControls({ setAnimation, animate, firstYear, lastYear, setYear }) 
   )
 };
 
-function MapControls({ setAnimation, animate, firstYear, lastYear, setYear, selectedConferences, setAutoScrollSpeed, setMapDisplayOptions, mapDisplayOptions, animationSpeed, confCountryOpacity, setConfCountryOpacity }) {
+function MapControls({ setAnimation, animate, firstYear, lastYear, setYear, selectedConferences, setAutoScrollSpeed, setMapDisplayOptions, mapDisplayOptions, animationSpeed, confCountryOpacity, setConfCountryOpacity, confCountrySize, setConfCountrySize }) {
   return (
     <nav className="navbar map-controls">
       <div className="container-fluid">
@@ -554,6 +625,15 @@ function MapControls({ setAnimation, animate, firstYear, lastYear, setYear, sele
                 <button className='plusminus-btn' onClick={(e) => { e.stopPropagation(); setConfCountryOpacity("increase"); }}>+</button>
                 <button className='plusminus-btn' onClick={(e) => { e.stopPropagation(); setConfCountryOpacity("decrease"); }}>-</button>
                 <div className='plusminus-display'>{`${confCountryOpacity}`}</div>
+              </div>
+            </div>
+
+            <div className='map-more-control'>
+              <p>Circle Size</p>
+              <div className='map-control-plusminus-container'>
+                <button className='plusminus-btn' onClick={(e) => { e.stopPropagation(); setConfCountrySize("increase"); }}>+</button>
+                <button className='plusminus-btn' onClick={(e) => { e.stopPropagation(); setConfCountrySize("decrease"); }}>-</button>
+                <div className='plusminus-display'>{`${confCountrySize} mi`}</div>
               </div>
             </div>
 
@@ -684,9 +764,34 @@ function NavBar({ conferenceNames, selectConference, searchYears, conferenceLogo
                   QuickSelect Animations
                 </a>
                 <ul className="dropdown-menu" aria-labelledby="navbarDropdown">
-                  <li key={'Power5'} className='dropdown-item'>
+                  <li key={'ModernExpansion'} className='dropdown-item'>
                     <button onClick={preprogrammedAnimations} className='dropdown-item' data-anim-name="Modern Expansion">
                       Modern Expansion
+                    </button>
+                  </li>
+                  <li key={'DeathPac12'} className='dropdown-item'>
+                    <button onClick={preprogrammedAnimations} className='dropdown-item' data-anim-name="Death of the Pac 12">
+                      Death of the Pac 12
+                    </button>
+                  </li>
+                  <li key={'CUSA'} className='dropdown-item'>
+                    <button onClick={preprogrammedAnimations} className='dropdown-item' data-anim-name="CUSA & The Sun Belt: A Wild Ride">
+                      CUSA & The Sun Belt: A Wild Ride
+                    </button>
+                  </li>
+                  <li key={'Big2'} className='dropdown-item'>
+                    <button onClick={preprogrammedAnimations} className='dropdown-item' data-anim-name="Big 2 since 32">
+                      Big 2 since '32
+                    </button>
+                  </li>
+                  <li key={'MAC'} className='dropdown-item'>
+                    <button onClick={preprogrammedAnimations} className='dropdown-item' data-anim-name="Truly Mid-American">
+                      Truly Mid-American
+                    </button>
+                  </li>
+                  <li key={'Big12'} className='dropdown-item'>
+                    <button onClick={preprogrammedAnimations} className='dropdown-item' data-anim-name="What is the Big 12?">
+                      What is the Big 12?
                     </button>
                   </li>
                 </ul>
@@ -822,7 +927,7 @@ const DraggableTimeline = ({ years, setYear, selectedYear, redraw, setRedraw, se
   );
 };
 
-function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedConferences, mapElements, confColors, countryOpacity }) {
+function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedConferences, mapElements, confColors, countryOpacity, confCountrySize }) {
 
 
   const mapRef = useRef(null);
@@ -831,7 +936,7 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
   const [schoolCoordinates, setSchoolCoordinates] = useState({});
   const [schoolToCenterLines, setSchoolToCenterLines] = useState({})
 
-  const CircleRadius = 200 * 1609
+  const CircleRadius = confCountrySize * 1609
 
   useEffect(() => {
     let newCoordObject = {};
@@ -934,7 +1039,6 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
           attribution='&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>'
           url='https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png'
         />
-        {console.log(filteredConferenceList)}
         {filteredConferenceList.map((conference) => conference.schools.map((school) => (
           <Fragment key={`${school.name}-${school.id}`}>
             {mapElements.teams ?

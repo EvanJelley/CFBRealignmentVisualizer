@@ -21,7 +21,7 @@ def addCoordinatesToCSV(csvFile):
     """
     This function takes a csv file and adds a column called "Coordinates" to the csv file."
     """
-    df = pd.read_csv("ConferenceCSVs/" + csvFile)
+    df = pd.read_csv("DatabaseCreation/GeoScrape/" + csvFile)
     df["Coordinates"] = ""
 
     for index, row in df.iterrows():
@@ -34,13 +34,13 @@ def addCoordinatesToCSV(csvFile):
         coordinates = getCoordinates(city, state)
         df.at[index, "Coordinates"] = coordinates[0] + ',' + coordinates[1]
     
-    df.to_csv("ConferenceCSVs/" + csvFile, index=False)
+    df.to_csv("DatabaseCreation/GeoScrape/" + csvFile, index=False)
 
 def updateCSVs():
     """
     This function updates all csv files in the current directory.
     """
-    for file in os.listdir("ConferenceCSVs"):
+    for file in os.listdir("DatabaseCreation/GeoScrape"):
         if file.endswith(".csv"):
             print("Processing " + file + "...")
             addCoordinatesToCSV(file)
@@ -53,5 +53,6 @@ def correctLeftColumn():
             df["Left"] = df["Left"].replace("False", np.nan) 
             df.to_csv("ConferenceCSVs/" + file, index=False)
 
-correctLeftColumn()
+updateCSVs()
+# correctLeftColumn()
 

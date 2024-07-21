@@ -8,6 +8,10 @@ django = "*"
 djangorestframework = "*"
 drf-yasg = "*"
 django-cors-headers = "*"
+requests = "*"
+pandas = "*"
+bs4 = "*"
+lxml = "*"
 
 [dev-packages]
 

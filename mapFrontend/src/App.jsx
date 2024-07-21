@@ -87,7 +87,7 @@ function App() {
   const [confCountrySize, setConfCountrySize] = useState(200)
 
 
-  const [conferenceNames, setConferenceNames] = useState(["SEC", "Big Ten", "ACC", "Big 12", "Pac 12", "Mountain West", "Sun Belt", "CUSA", "MAC", "NCAA"])
+  const [conferenceNames, setConferenceNames] = useState(["SEC", "Big Ten", "ACC", "Big 12", "Pac 12", "Mountain West", "Sun Belt", "CUSA", "MAC", "AAC", "NCAA"])
   const [selectedConferences, setSelectedConferences] = useState([])
   const [conferenceYears, setConferenceYears] = useState([])
   const [selectedYear, setSelectedYear] = useState('')
@@ -122,6 +122,7 @@ function App() {
       });
       setConferenceLogos(logos);
       setConferenceColors(colors);
+      console.log(logos)
 
       const confIconsPromises = logoResponse.data.map(async (logo) => {
         const dimensions = await getImageDimmensions(logo.logo, CONFLOGOSIZE);
@@ -929,7 +930,11 @@ const DraggableTimeline = ({ years, setYear, selectedYear, redraw, setRedraw, se
 
 function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedConferences, mapElements, confColors, countryOpacity, confCountrySize }) {
 
-
+  // var myIcon = L.icon({
+  //   iconUrl: APIURL + '/media/images/conf_logos/ncaa.png',
+  //   iconSize: [10, 10],
+  // });
+  
   const mapRef = useRef(null);
   const containerRef = useRef(null);
   const [width, setwidth] = useState(window.innerWidth);

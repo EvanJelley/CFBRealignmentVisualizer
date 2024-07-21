@@ -6,12 +6,14 @@ import requests
 import pandas as pd
 import io
 from bs4 import BeautifulSoup
+import csv
 
 class school(object):
 
-    def __init__(self, name, location, football, basketball, latitude, longitude):
+    def __init__(self, name, city, state, football, basketball, latitude, longitude):
         self.name = name
-        self.location = location
+        self.city = city
+        self.state = state
         self.football = football
         self.basketball = basketball
         self.latitude = latitude
@@ -28,10 +30,9 @@ class school(object):
     
 class conference(object):
 
-    def __init__(self, name, startYear, endYear):
+    def __init__(self, name, year):
         self.name = name
-        self.startYear = startYear
-        self.endYear = endYear
+        self.year = year
         self.schools = []
         self.bBallSchools = None
         self.fBallSchools = None
@@ -56,7 +57,7 @@ class conference(object):
         fBallSchools = []
         for school in self.schools:
             if school.football:
-                    fBallSchools.append(school)
+                fBallSchools.append(school)
             if school.basketball:
                 bBallSchools.append(school)
             self.bBallSchools = bBallSchools
@@ -169,7 +170,7 @@ class conference(object):
             self.fBallAvgDistanceFromOtherSchools = round(distance / (len(self.fBallSchools) * len(self.fBallSchools)), 2)
 
     def __str__(self):
-        return self.name + " " + self.startYear + "-" + self.endYear
+        return self.name + " " + str(self.year)
     
 class majorCity(object):
 
@@ -449,83 +450,255 @@ def calculateGeoCenter(points):
     currentPoint = (math.degrees(currentPoint[0]), math.degrees(currentPoint[1]))
     return currentPoint
 
+def convertToTwoLetterState(state):
+    state = state.strip()
+    if state == "Alabama":
+        return "AL"
+    elif state == "Alaska":
+        return "AK"
+    elif state == "Arizona":
+        return "AZ"
+    elif state == "Arkansas":
+        return "AR"
+    elif state == "California":
+        return "CA"
+    elif state == "Colorado":
+        return "CO"
+    elif state == "Connecticut":
+        return "CT"
+    elif state == "Delaware":
+        return "DE"
+    elif state == "Florida":
+        return "FL"
+    elif state == "Georgia":
+        return "GA"
+    elif state == "Hawaii":
+        return "HI"
+    elif state == "Idaho":
+        return "ID"
+    elif state == "Illinois":
+        return "IL"
+    elif state == "Indiana":
+        return "IN"
+    elif state == "Iowa":
+        return "IA"
+    elif state == "Kansas":
+        return "KS"
+    elif state == "Kentucky":
+        return "KY"
+    elif state == "Louisiana":
+        return "LA"
+    elif state == "Maine":
+        return "ME"
+    elif state == "Maryland":
+        return "MD"
+    elif state == "Massachusetts":
+        return "MA"
+    elif state == "Michigan":
+        return "MI"
+    elif state == "Minnesota":
+        return "MN"
+    elif state == "Mississippi":
+        return "MS"
+    elif state == "Missouri":
+        return "MO"
+    elif state == "Montana":
+        return "MT"
+    elif state == "Nebraska":
+        return "NE"
+    elif state == "Nevada":
+        return "NV"
+    elif state == "New Hampshire":
+        return "NH"
+    elif state == "New Jersey":
+        return "NJ"
+    elif state == "New Mexico":
+        return "NM"
+    elif state == "New York":
+        return "NY"
+    elif state == "North Carolina":
+        return "NC"
+    elif state == "North Dakota":
+        return "ND"
+    elif state == "Ohio":
+        return "OH"
+    elif state == "Oklahoma":
+        return "OK"
+    elif state == "Oregon":
+        return "OR"
+    elif state == "Pennsylvania":
+        return "PA"
+    elif state == "Rhode Island":
+        return "RI"
+    elif state == "South Carolina":
+        return "SC"
+    elif state == "South Dakota":
+        return "SD"
+    elif state == "Tennessee":
+        return "TN"
+    elif state == "Texas":
+        return "TX"
+    elif state == "Utah":
+        return "UT"
+    elif state == "Vermont":
+        return "VT"
+    elif state == "Virginia":
+        return "VA"
+    elif state == "Washington":
+        return "WA"
+    elif state == "West Virginia":
+        return "WV"
+    elif state == "Wisconsin":
+        return "WI"
+    elif state == "Wyoming":
+        return "WY"
+    else:
+        return ""
 
-def readInSchools():
+
+def readCSV(Conference):
     conferencesByEraObjects = []
+    schoolObjects = []
     cities = createMajorCitiesList()
 
-    # Find all the files in the directory
-    for file in os.listdir("ConferenceByEraDB"):
-        if file.endswith(".db") and file != "GeoCenters.db" and file != "ConferenceSummary.db":
+    # Read the CSV file
+    with open(f"DatabaseCreation/GeoScrape/{Conference}.csv", "r") as file:
+        reader = list(csv.reader(file))
+        reader.pop(0)
 
-            conf = file[:-3] 
+        startYear = 3000
+        # Iterate over each row in the CSV file
+        for row in reader:
+            if int(row[2]) < startYear:
+                startYear = int(row[2])
 
-            print("Processing " + file + "...")
+        for schoolObj in schoolObjects:
+            print(schoolObj.name, schoolObj.location, schoolObj.football, schoolObj.basketball, schoolObj.latitude, schoolObj.longitude)
 
-            # Connect to the database
-            conn = sqlite3.connect("ConferenceByEraDB/" + file)
-            cursor = conn.cursor()
-
-            # Select table names from database
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-
-            tables = cursor.fetchall()
-
-            # Itereate tables
-            for table in tables:
-                # Connect to table
-                # print(f"Processing {table[0]}")
-                cursor.execute(f"SELECT * FROM {table[0]}")
-                
-                # Make conference era object
-                confEra = conference(conf, table[0][6:10], table[0][11:])
-                rows = cursor.fetchall()
+        for i in range(startYear, 2025):
+            print(f"Processing {Conference} {i}...")
+            confEra = conference(Conference, i)
+            for row in reader:
 
                 # Add the schools to the conference object
-                for row in rows:
-                    name = row[0]
-                    location = row[1]
-                    if row[2] == "1":
-                        football = True
-                    else:
-                        football = False
-                    if row[3] == "1":
-                        basketball = True
-                    else:
-                        basketball = False
-                    coordinates = row[4]
-                    latitude, longitude = coordinateCleaner(coordinates)
-                    latitude = convertDegreesMinutesSecondsToDecimal(latitude)
-                    longitude = convertDegreesMinutesSecondsToDecimal(longitude)
-                    schoolObj = school(name, location, football, basketball, latitude, longitude)
-                    confEra.addSchool(schoolObj)
+                name = row[0]
+                location = row[1].split(',')
+                city = location[0].strip()
+                state = convertToTwoLetterState(location[1].strip())
+                football = True if row[4] == "True" else False
+                basketball = True if row[5] == "True" else False
+                coordinates = row[6]
+                latitude, longitude = coordinateCleaner(coordinates)
+                latitude = convertDegreesMinutesSecondsToDecimal(latitude)
+                longitude = convertDegreesMinutesSecondsToDecimal(longitude)
+                schoolObj = school(name, city, state, football, basketball, latitude, longitude)
+
+                add = True
+                for s in schoolObjects:
+                    if s.name == name:
+                        add = False
+                if add:
+                    schoolObjects.append(schoolObj)
+
+                if int(row[2]) <= i:
+                    if str(row[3]) == "False":
+                        confEra.addSchool(schoolObj)
+                    elif int(row[3]) >= i:
+                        confEra.addSchool(schoolObj)
+                                
+            # Find the schools that play basketball and football
+            confEra.findSportSpecificSchools()
+
+            # Calculate the center of the conference
+            confEra.findGeoCenter()
+
+            # Find the capital of the conference
+            confEra.findCapital(cities)
+
+            # Find the average distance between the schools
+            confEra.findAvgDistanceFromOtherSchools()
+
+            # Find the average distance from the center of the conference
+            confEra.findAvgDistanceFromGeoCenter()
+
+            # Add the conference era object to the list of conference era objects
+            conferencesByEraObjects.append(confEra)        
+
+    return conferencesByEraObjects, schoolObjects
+
+AACYears, AACSchools = readCSV("AAC")
+
+
+def AACBuilder(apps, schema_editor):
+    ConferenceName = apps.get_model('conferences', 'ConferenceName')
+    School = apps.get_model('conferences', 'School')
+    Year = apps.get_model('conferences', 'Year')
+    ConferenceByYear = apps.get_model('conferences', 'ConferenceByYear')
+    MajorCity = apps.get_model('conferences', 'MajorCity')
+
+    AACEras, AACSchools = readCSV("AAC")
+
+    ConferenceName.objects.create(name="AAC")
+
+    for university in AACSchools:
+        if not School.objects.filter(name=university.name).exists():
+            School.objects.create(name=university.name, city=university.city, state=university.state, latitude=university.latitude, longitude=university.longitude)                            
+
+    for confERA in AACEras:
+        if confERA.fBallSchools == confERA.bBallSchools:
+            if not MajorCity.objects.filter(name=confERA.capital.city).exists():
+                MajorCity.objects.create(name=confERA.capital.city, state=confERA.capital.state, latitude=confERA.capital.latitude, longitude=confERA.capital.longitude)
+            conference_by_year = ConferenceByYear.objects.create(year=Year.objects.get(year=confERA.year),
+                                            conference=ConferenceName.objects.get(name="AAC"),
+                                            football=True,
+                                            basketball=True,
+                                            centerLat= confERA.geoCenter[0],
+                                            centerLon= confERA.geoCenter[1],
+                                            capital= MajorCity.objects.get(name=confERA.capital.city),
+                                            avgDistanceFromCenter= confERA.avgDistanceFromGeoCenter,
+                                            avgDistanceBetweenSchools= confERA.avgDistanceFromOtherSchools)
+            uniNames = []
+            for team in confERA.schools:
+                uniNames.append(team.name)
+            conference_by_year.schools.set(School.objects.filter(name__in=uniNames))
+        else:
+            if not MajorCity.objects.filter(name=confERA.bBallCapital.city).exists():
+                MajorCity.objects.create(name=confERA.bBallCapital.city, state=confERA.bBallCapital.state, latitude=confERA.bBallCapital.latitude, longitude=confERA.bBallCapital.longitude)
+
+            if not MajorCity.objects.filter(name=confERA.fBallCapital.city).exists():
+                MajorCity.objects.create(name=confERA.fBallCapital.city, state=confERA.fBallCapital.state, latitude=confERA.fBallCapital.latitude, longitude=confERA.fBallCapital.longitude)
+            
+            footballSchools = []
+            basketballSchools = []
+            for team in confERA.fBallSchools:
+                footballSchools.append(team.name)
+            for team in confERA.bBallSchools:
+                basketballSchools.append(team.name)
+            conference_by_year_fball = ConferenceByYear.objects.create(year=Year.objects.get(year=confERA.year),
+                conference=ConferenceName.objects.get(name="AAC"),
+                football=True,
+                basketball=False,
+                centerLat= confERA.fBallGeoCenter[0],
+                centerLon= confERA.fBallGeoCenter[1],
+                capital= MajorCity.objects.get(name=confERA.fBallCapital.city),
+                avgDistanceFromCenter= confERA.fBallAvgDistanceFromGeoCenter,
+                avgDistanceBetweenSchools= confERA.fBallAvgDistanceFromOtherSchools)
+            conference_by_year_bball = ConferenceByYear.objects.create(year=Year.objects.get(year=confERA.year),
+                conference=ConferenceName.objects.get(name="AAC"),
+                football=False,
+                basketball=True,
+                centerLat= confERA.bBallGeoCenter[0],
+                centerLon= confERA.bBallGeoCenter[1],
+                capital= MajorCity.objects.get(name=confERA.bBallCapital.city),
+                avgDistanceFromCenter= confERA.bBallAvgDistanceFromGeoCenter,
+                avgDistanceBetweenSchools= confERA.bBallAvgDistanceFromOtherSchools)
+            
+            conference_by_year_fball.schools.set(School.objects.filter(name__in=footballSchools))
+            conference_by_year_bball.schools.set(School.objects.filter(name__in=basketballSchools))
+
                 
-                # Find the schools that play basketball and football
-                confEra.findSportSpecificSchools()
-
-                # Calculate the center of the conference
-                confEra.findGeoCenter()
-
-                # Find the capital of the conference
-                confEra.findCapital(cities)
-
-                # Find the average distance between the schools
-                confEra.findAvgDistanceFromOtherSchools()
-
-                # Find the average distance from the center of the conference
-                confEra.findAvgDistanceFromGeoCenter()
-
-                # Add the conference era object to the list of conference era objects
-                conferencesByEraObjects.append(confEra)
-            conn.close()
-
-    return conferencesByEraObjects 
 
 
-
-
-
-# conferenceSummaryDBBuilder()
 
 
 

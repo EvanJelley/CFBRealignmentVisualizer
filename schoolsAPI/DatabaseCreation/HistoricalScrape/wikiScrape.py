@@ -60,6 +60,9 @@ def dfCleaner(df):
     if not any('Left' in col for col in df.columns):
         df['Left'] = np.NaN
 
+    if not any('Joined' in col for col in df.columns):
+        df['Joined'] = np.NaN
+
     # Check if 'City' and 'State' columns exist
     if 'City' in df.columns and 'State' in df.columns:
         # Merge 'City' and 'State' columns

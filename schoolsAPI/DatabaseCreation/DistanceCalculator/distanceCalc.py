@@ -8,7 +8,7 @@ import io
 from bs4 import BeautifulSoup
 import csv
 
-class school(object):
+class School(object):
 
     def __init__(self, name, city, state, football, basketball, latitude, longitude):
         self.name = name
@@ -78,12 +78,15 @@ class conference(object):
                 latitude = s.getLatitude()
                 longitude = s.getLongitude()
                 bBallLocations.append((latitude, longitude))
-            for s in self.fBallSchools:
-                latitude = s.getLatitude()
-                longitude = s.getLongitude()
-                fBallLocations.append((latitude, longitude))
             self.bBallGeoCenter = calculateGeoCenter(bBallLocations)
-            self.fBallGeoCenter = calculateGeoCenter(fBallLocations)
+            if self.name != "BigEast":
+                for s in self.fBallSchools:
+                    latitude = s.getLatitude()
+                    longitude = s.getLongitude()
+                    fBallLocations.append((latitude, longitude))
+                self.fBallGeoCenter = calculateGeoCenter(fBallLocations)
+            else:
+                self.fBallGeoCenter = None
 
     def findCapital(self, cities):
         if self.bBallSchools == self.fBallSchools:
@@ -119,20 +122,21 @@ class conference(object):
                         bBallCapital = city
                         currentDistance = distance
             self.bBallCapital = bBallCapital
-            currentDistance = None
-            for city in cities:
-                cityLat = math.radians(city.getLatitude())
-                cityLon = math.radians(city.getLongitude())
-                if fBallCapital == None:
-                    fBallCapital = city
-                    distance = pointToPointCalc(math.radians(self.fBallGeoCenter[0]), math.radians(self.fBallGeoCenter[1]), cityLat, cityLon)
-                    currentDistance = distance
-                else:
-                    distance = pointToPointCalc(math.radians(self.fBallGeoCenter[0]), math.radians(self.fBallGeoCenter[1]), cityLat, cityLon)
-                    if distance < currentDistance:
+            if self.name != "BigEast":
+                currentDistance = None
+                for city in cities:
+                    cityLat = math.radians(city.getLatitude())
+                    cityLon = math.radians(city.getLongitude())
+                    if fBallCapital == None:
                         fBallCapital = city
+                        distance = pointToPointCalc(math.radians(self.fBallGeoCenter[0]), math.radians(self.fBallGeoCenter[1]), cityLat, cityLon)
                         currentDistance = distance
-            self.fBallCapital = fBallCapital
+                    else:
+                        distance = pointToPointCalc(math.radians(self.fBallGeoCenter[0]), math.radians(self.fBallGeoCenter[1]), cityLat, cityLon)
+                        if distance < currentDistance:
+                            fBallCapital = city
+                            currentDistance = distance
+                self.fBallCapital = fBallCapital
     
     def findAvgDistanceFromGeoCenter(self):
         if self.bBallSchools == self.fBallSchools:
@@ -145,10 +149,13 @@ class conference(object):
             for school in self.bBallSchools:
                 distance += pointToPointCalc(math.radians(self.bBallGeoCenter[0]), math.radians(self.bBallGeoCenter[1]), math.radians(school.getLatitude()), math.radians(school.getLongitude()))
             self.bBallAvgDistanceFromGeoCenter = round(distance / len(self.bBallSchools), 2)
-            distance = 0
-            for school in self.fBallSchools:
-                distance += pointToPointCalc(math.radians(self.fBallGeoCenter[0]), math.radians(self.fBallGeoCenter[1]), math.radians(school.getLatitude()), math.radians(school.getLongitude()))
-            self.fBallAvgDistanceFromGeoCenter = round(distance / len(self.fBallSchools), 2)
+            if self.name == "BigEast":
+                self.fBallAvgDistanceFromGeoCenter = 0
+            else:
+                distance = 0
+                for school in self.fBallSchools:
+                    distance += pointToPointCalc(math.radians(self.fBallGeoCenter[0]), math.radians(self.fBallGeoCenter[1]), math.radians(school.getLatitude()), math.radians(school.getLongitude()))
+                self.fBallAvgDistanceFromGeoCenter = round(distance / len(self.fBallSchools), 2)
     
     def findAvgDistanceFromOtherSchools(self):
         if self.bBallSchools == self.fBallSchools:
@@ -163,11 +170,14 @@ class conference(object):
                 for school2 in self.bBallSchools:
                     distance += pointToPointCalc(math.radians(school.getLatitude()), math.radians(school.getLongitude()), math.radians(school2.getLatitude()), math.radians(school2.getLongitude()))
             self.bBallAvgDistanceFromOtherSchools = round(distance / (len(self.bBallSchools) * len(self.bBallSchools)), 2)
-            distance = 0
-            for school in self.fBallSchools:
-                for school2 in self.fBallSchools:
-                    distance += pointToPointCalc(math.radians(school.getLatitude()), math.radians(school.getLongitude()), math.radians(school2.getLatitude()), math.radians(school2.getLongitude()))
-            self.fBallAvgDistanceFromOtherSchools = round(distance / (len(self.fBallSchools) * len(self.fBallSchools)), 2)
+            if self.name == "BigEast":
+                self.fBallAvgDistanceFromOtherSchools = 0
+            else:
+                distance = 0
+                for school in self.fBallSchools:
+                    for school2 in self.fBallSchools:
+                        distance += pointToPointCalc(math.radians(school.getLatitude()), math.radians(school.getLongitude()), math.radians(school2.getLatitude()), math.radians(school2.getLongitude()))
+                self.fBallAvgDistanceFromOtherSchools = round(distance / (len(self.fBallSchools) * len(self.fBallSchools)), 2)
 
     def __str__(self):
         return self.name + " " + str(self.year)
@@ -556,7 +566,7 @@ def convertToTwoLetterState(state):
         return ""
 
 
-def readCSV(Conference):
+def readCSV(Conference, endYear):
     conferencesByEraObjects = []
     schoolObjects = []
     cities = createMajorCitiesList()
@@ -575,7 +585,7 @@ def readCSV(Conference):
         for schoolObj in schoolObjects:
             print(schoolObj.name, schoolObj.location, schoolObj.football, schoolObj.basketball, schoolObj.latitude, schoolObj.longitude)
 
-        for i in range(startYear, 2025):
+        for i in range(startYear, endYear + 1):
             print(f"Processing {Conference} {i}...")
             confEra = conference(Conference, i)
             for row in reader:
@@ -591,7 +601,7 @@ def readCSV(Conference):
                 latitude, longitude = coordinateCleaner(coordinates)
                 latitude = convertDegreesMinutesSecondsToDecimal(latitude)
                 longitude = convertDegreesMinutesSecondsToDecimal(longitude)
-                schoolObj = school(name, city, state, football, basketball, latitude, longitude)
+                schoolObj = School(name, city, state, football, basketball, latitude, longitude)
 
                 add = True
                 for s in schoolObjects:
@@ -626,8 +636,193 @@ def readCSV(Conference):
 
     return conferencesByEraObjects, schoolObjects
 
-AACYears, AACSchools = readCSV("AAC")
+# AACYears, AACSchools = readCSV("AAC")
 
+# BigEastEras, BigEastSchools = readCSV("BigEast")
+
+# BigEightEras, BigEightSchools = readCSV("BigEight", 1996)
+
+# for era in BigEightEras:
+#     print(era.name, era.year)
+#     for school in era.schools:
+#         print(school.name)
+
+SWCEras, SWCSchools = readCSV("SWC", 1996)
+
+for era in SWCEras:
+    print(era.name, era.year)
+    for school in era.schools:
+        print(school.name)
+
+
+def SWCBuilder(apps, schema_editor):
+    ConferenceName = apps.get_model('conferences', 'ConferenceName')
+    School = apps.get_model('conferences', 'School')
+    Year = apps.get_model('conferences', 'Year')
+    ConferenceByYear = apps.get_model('conferences', 'ConferenceByYear')
+    MajorCity = apps.get_model('conferences', 'MajorCity')
+
+    eras, schools = readCSV("SWC", 1996)
+
+    ConferenceName.objects.create(name="SWC")
+
+    for university in schools:
+        if not School.objects.filter(name=university.name).exists():
+            School.objects.create(name=university.name, city=university.city, state=university.state, latitude=university.latitude, longitude=university.longitude)                            
+
+    for confERA in eras:
+        if confERA.fBallSchools == confERA.bBallSchools:
+            if not MajorCity.objects.filter(name=confERA.capital.city).exists():
+                MajorCity.objects.create(name=confERA.capital.city, state=confERA.capital.state, latitude=confERA.capital.latitude, longitude=confERA.capital.longitude)
+            conference_by_year = ConferenceByYear.objects.create(year=Year.objects.get(year=confERA.year),
+                                            conference=ConferenceName.objects.get(name="SWC"),
+                                            football=True,
+                                            basketball=True,
+                                            centerLat= confERA.geoCenter[0],
+                                            centerLon= confERA.geoCenter[1],
+                                            capital= MajorCity.objects.get(name=confERA.capital.city),
+                                            avgDistanceFromCenter= confERA.avgDistanceFromGeoCenter,
+                                            avgDistanceBetweenSchools= confERA.avgDistanceFromOtherSchools)
+            uniNames = []
+            for team in confERA.schools:
+                uniNames.append(team.name)
+            conference_by_year.schools.set(School.objects.filter(name__in=uniNames))
+        else:
+            if not MajorCity.objects.filter(name=confERA.bBallCapital.city).exists():
+                MajorCity.objects.create(name=confERA.bBallCapital.city, state=confERA.bBallCapital.state, latitude=confERA.bBallCapital.latitude, longitude=confERA.bBallCapital.longitude)
+
+            if not MajorCity.objects.filter(name=confERA.fBallCapital.city).exists():
+                MajorCity.objects.create(name=confERA.fBallCapital.city, state=confERA.fBallCapital.state, latitude=confERA.fBallCapital.latitude, longitude=confERA.fBallCapital.longitude)
+            
+            footballSchools = []
+            basketballSchools = []
+            for team in confERA.fBallSchools:
+                footballSchools.append(team.name)
+            for team in confERA.bBallSchools:
+                basketballSchools.append(team.name)
+            conference_by_year_fball = ConferenceByYear.objects.create(year=Year.objects.get(year=confERA.year),
+                conference=ConferenceName.objects.get(name="SWC"),
+                football=True,
+                basketball=False,
+                centerLat= confERA.fBallGeoCenter[0],
+                centerLon= confERA.fBallGeoCenter[1],
+                capital= MajorCity.objects.get(name=confERA.fBallCapital.city),
+                avgDistanceFromCenter= confERA.fBallAvgDistanceFromGeoCenter,
+                avgDistanceBetweenSchools= confERA.fBallAvgDistanceFromOtherSchools)
+            conference_by_year_bball = ConferenceByYear.objects.create(year=Year.objects.get(year=confERA.year),
+                conference=ConferenceName.objects.get(name="SWC"),
+                football=False,
+                basketball=True,
+                centerLat= confERA.bBallGeoCenter[0],
+                centerLon= confERA.bBallGeoCenter[1],
+                capital= MajorCity.objects.get(name=confERA.bBallCapital.city),
+                avgDistanceFromCenter= confERA.bBallAvgDistanceFromGeoCenter,
+                avgDistanceBetweenSchools= confERA.bBallAvgDistanceFromOtherSchools)
+            
+            conference_by_year_fball.schools.set(School.objects.filter(name__in=footballSchools))
+            conference_by_year_bball.schools.set(School.objects.filter(name__in=basketballSchools))
+
+def BigEastBuilder(apps, schema_editor):
+    ConferenceName = apps.get_model('conferences', 'ConferenceName')
+    School = apps.get_model('conferences', 'School')
+    Year = apps.get_model('conferences', 'Year')
+    ConferenceByYear = apps.get_model('conferences', 'ConferenceByYear')
+    MajorCity = apps.get_model('conferences', 'MajorCity')
+
+    BigEastEras, BigEastSchools = readCSV("BigEast")
+
+    ConferenceName.objects.create(name="BigEast")
+
+    for university in BigEastSchools:
+        if not School.objects.filter(name=university.name).exists():
+            School.objects.create(name=university.name, city=university.city, state=university.state, latitude=university.latitude, longitude=university.longitude)                            
+
+    for confERA in BigEastEras:
+        print(confERA.name, confERA.year)
+        if not MajorCity.objects.filter(name=confERA.bBallCapital.city).exists():
+            MajorCity.objects.create(name=confERA.bBallCapital.city, state=confERA.bBallCapital.state, latitude=confERA.bBallCapital.latitude, longitude=confERA.bBallCapital.longitude)
+        
+        basketballSchools = []
+        for team in confERA.bBallSchools:
+            basketballSchools.append(team.name)
+        conference_by_year_bball = ConferenceByYear.objects.create(year=Year.objects.get(year=confERA.year),
+            conference=ConferenceName.objects.get(name="BigEast"),
+            football=False,
+            basketball=True,
+            centerLat= confERA.bBallGeoCenter[0],
+            centerLon= confERA.bBallGeoCenter[1],
+            capital= MajorCity.objects.get(name=confERA.bBallCapital.city),
+            avgDistanceFromCenter= confERA.bBallAvgDistanceFromGeoCenter,
+            avgDistanceBetweenSchools= confERA.bBallAvgDistanceFromOtherSchools)
+        
+        conference_by_year_bball.schools.set(School.objects.filter(name__in=basketballSchools))
+
+def BigEightBuilder(apps, schema_editor):
+    ConferenceName = apps.get_model('conferences', 'ConferenceName')
+    School = apps.get_model('conferences', 'School')
+    Year = apps.get_model('conferences', 'Year')
+    ConferenceByYear = apps.get_model('conferences', 'ConferenceByYear')
+    MajorCity = apps.get_model('conferences', 'MajorCity')
+
+    eras, schools = readCSV("BigEight", 1996)
+
+    ConferenceName.objects.create(name="BigEight")
+
+    for university in schools:
+        if not School.objects.filter(name=university.name).exists():
+            School.objects.create(name=university.name, city=university.city, state=university.state, latitude=university.latitude, longitude=university.longitude)                            
+
+    for confERA in eras:
+        if confERA.fBallSchools == confERA.bBallSchools:
+            if not MajorCity.objects.filter(name=confERA.capital.city).exists():
+                MajorCity.objects.create(name=confERA.capital.city, state=confERA.capital.state, latitude=confERA.capital.latitude, longitude=confERA.capital.longitude)
+            conference_by_year = ConferenceByYear.objects.create(year=Year.objects.get(year=confERA.year),
+                                            conference=ConferenceName.objects.get(name="BigEight"),
+                                            football=True,
+                                            basketball=True,
+                                            centerLat= confERA.geoCenter[0],
+                                            centerLon= confERA.geoCenter[1],
+                                            capital= MajorCity.objects.get(name=confERA.capital.city),
+                                            avgDistanceFromCenter= confERA.avgDistanceFromGeoCenter,
+                                            avgDistanceBetweenSchools= confERA.avgDistanceFromOtherSchools)
+            uniNames = []
+            for team in confERA.schools:
+                uniNames.append(team.name)
+            conference_by_year.schools.set(School.objects.filter(name__in=uniNames))
+        else:
+            if not MajorCity.objects.filter(name=confERA.bBallCapital.city).exists():
+                MajorCity.objects.create(name=confERA.bBallCapital.city, state=confERA.bBallCapital.state, latitude=confERA.bBallCapital.latitude, longitude=confERA.bBallCapital.longitude)
+
+            if not MajorCity.objects.filter(name=confERA.fBallCapital.city).exists():
+                MajorCity.objects.create(name=confERA.fBallCapital.city, state=confERA.fBallCapital.state, latitude=confERA.fBallCapital.latitude, longitude=confERA.fBallCapital.longitude)
+            
+            footballSchools = []
+            basketballSchools = []
+            for team in confERA.fBallSchools:
+                footballSchools.append(team.name)
+            for team in confERA.bBallSchools:
+                basketballSchools.append(team.name)
+            conference_by_year_fball = ConferenceByYear.objects.create(year=Year.objects.get(year=confERA.year),
+                conference=ConferenceName.objects.get(name="BigEight"),
+                football=True,
+                basketball=False,
+                centerLat= confERA.fBallGeoCenter[0],
+                centerLon= confERA.fBallGeoCenter[1],
+                capital= MajorCity.objects.get(name=confERA.fBallCapital.city),
+                avgDistanceFromCenter= confERA.fBallAvgDistanceFromGeoCenter,
+                avgDistanceBetweenSchools= confERA.fBallAvgDistanceFromOtherSchools)
+            conference_by_year_bball = ConferenceByYear.objects.create(year=Year.objects.get(year=confERA.year),
+                conference=ConferenceName.objects.get(name="BigEight"),
+                football=False,
+                basketball=True,
+                centerLat= confERA.bBallGeoCenter[0],
+                centerLon= confERA.bBallGeoCenter[1],
+                capital= MajorCity.objects.get(name=confERA.bBallCapital.city),
+                avgDistanceFromCenter= confERA.bBallAvgDistanceFromGeoCenter,
+                avgDistanceBetweenSchools= confERA.bBallAvgDistanceFromOtherSchools)
+            
+            conference_by_year_fball.schools.set(School.objects.filter(name__in=footballSchools))
+            conference_by_year_bball.schools.set(School.objects.filter(name__in=basketballSchools))
 
 def AACBuilder(apps, schema_editor):
     ConferenceName = apps.get_model('conferences', 'ConferenceName')

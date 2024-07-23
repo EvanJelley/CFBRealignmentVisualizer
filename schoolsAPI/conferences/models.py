@@ -21,6 +21,7 @@ class ConferenceName(models.Model):
     name = models.CharField(max_length=100)
     logo = models.ImageField(upload_to='images/conf_logos', null=True, blank=True)
     colors = models.JSONField(null=True, blank=True)
+    historical = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name

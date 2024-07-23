@@ -83,11 +83,12 @@ function App() {
   const animateRef = useRef(animate)
   const [animationSpeed, setAnimationSpeed] = useState(500)
   const [mapDisplay, setMapDisplay] = useState({ teams: true, capitals: true, lines: true, confCountry: true });
-  const [confCountryOpacity, setConfCountryOpacity] = useState(0.1)
-  const [confCountrySize, setConfCountrySize] = useState(200)
+  const [confCountryOpacity, setConfCountryOpacity] = useState(0.5)
+  const [confCountrySize, setConfCountrySize] = useState(100)
 
 
   const [conferenceNames, setConferenceNames] = useState(["SEC", "Big Ten", "ACC", "Big 12", "Pac 12", "Mountain West", "Sun Belt", "CUSA", "MAC", "AAC", "Big East", "NCAA"])
+  const [historicalConferenceNames, setHistoricalConferenceNames] = useState(["SWC", "Big Eight"])
   const [selectedConferences, setSelectedConferences] = useState([])
   const [conferenceYears, setConferenceYears] = useState([])
   const [selectedYear, setSelectedYear] = useState('')
@@ -103,7 +104,7 @@ function App() {
 
       let conferenceNameList = conferenceNames
       response.data.map((conference) => {
-        conferenceNameList.includes(conference.conference) ? null :
+        conferenceNameList.includes(conference.conference) || historicalConferenceNames.includes(conference.conference) ? null :
           conferenceNameList.push(conference.conference)
       });
       setConferenceNames(conferenceNameList)
@@ -342,7 +343,7 @@ function App() {
       case 'Truly Mid-American':
         setSelectedConferences(['MAC']);
         yearMapButtonHandler(1946);
-        setMapDisplay({ teams: true, capitals:false, lines: false, confCountry: true });
+        setMapDisplay({ teams: true, capitals: false, lines: false, confCountry: true });
         setConfCountryOpacity(0.8);
         setConfCountrySize(150);
         setAnimationSpeed(100);
@@ -353,7 +354,7 @@ function App() {
       case 'What is the Big 12?':
         setSelectedConferences(['Big 12']);
         yearMapButtonHandler(1996);
-        setMapDisplay({ teams: true, capitals:true, lines: true, confCountry: true });
+        setMapDisplay({ teams: true, capitals: true, lines: true, confCountry: true });
         setConfCountryOpacity(0.6);
         setConfCountrySize(150);
         setTimeout(() => {
@@ -483,70 +484,79 @@ function App() {
   return (
     <>
       {isLoading ?
-        <p className='loading'>Loading...</p>
+        <div>
+          <img src="/images/football_backdrop.jpg" className='backdrop' />
+          <p className='loading' style={{ color: "white" }}>Loading...</p>
+        </div>
         :
         <>
-          <NavBar conferenceNames={conferenceNames}
-            conferenceYears={conferenceYears}
-            selectConference={selectConferenceHandler}
-            searchYears={yearSearch}
-            conferenceLogosObject={conferenceLogos}
-            selectedYear={selectedYear}
-            sportHandler={sportHandler}
-            splitConference={splitConference}
-            selectedConferences={selectedConferences}
-            sport={sport}
-            preprogrammedAnimations={preprogrammedAnimationsHandler} />
-          <div className='row map-chart-row'>
-            <div className='col-12 col-md-7'>
-              <div className="map-container">
-                <Map filteredConferenceList={filteredConferenceList}
-                  conferenceIcons={conferenceIcons}
-                  schoolIcons={schoolIcons}
-                  selectedConferences={selectedConferences}
-                  mapElements={mapDisplay}
-                  confColors={conferenceColors}
-                  countryOpacity={confCountryOpacity}
-                  confCountrySize={confCountrySize} />
-                <DraggableTimeline
-                  years={conferenceYears}
-                  setYear={selectYearHandler}
-                  selectedYear={selectedYear}
-                  redraw={redrawTimelineBool}
-                  setRedraw={setRedrawTimelineBool}
-                  setAnimate={setAnimate} />
-                <MapControls
-                  setAnimation={animationHandler}
-                  animate={animate} firstYear={conferenceYears[0]}
-                  lastYear={conferenceYears[conferenceYears.length - 1]}
-                  setYear={yearMapButtonHandler}
-                  selectedConferences={selectedConferences}
-                  setAutoScrollSpeed={autoScrollSpeedHandler}
-                  setMapDisplayOptions={handleMapDisplay}
-                  animationSpeed={animationSpeed}
-                  mapDisplayOptions={mapDisplay}
-                  confCountryOpacity={confCountryOpacity}
-                  setConfCountryOpacity={handleConfCountryOpacity}
-                  confCountrySize={confCountrySize}
-                  setConfCountrySize={handleConfCountrySize} />
+          <img src="/images/football_backdrop.jpg" className='backdrop' />
+          <div className='main-app-container'>
+            <NavBar conferenceNames={conferenceNames}
+              historicalConferenceNames={historicalConferenceNames}
+              conferenceYears={conferenceYears}
+              selectConference={selectConferenceHandler}
+              searchYears={yearSearch}
+              conferenceLogosObject={conferenceLogos}
+              selectedYear={selectedYear}
+              sportHandler={sportHandler}
+              splitConference={splitConference}
+              selectedConferences={selectedConferences}
+              sport={sport}
+              preprogrammedAnimations={preprogrammedAnimationsHandler} />
+            <div className='row map-chart-row'>
+              <div className='col-12 col-md-7'>
+                <div className="map-container">
+                  <Map filteredConferenceList={filteredConferenceList}
+                    conferenceIcons={conferenceIcons}
+                    schoolIcons={schoolIcons}
+                    selectedConferences={selectedConferences}
+                    mapElements={mapDisplay}
+                    confColors={conferenceColors}
+                    countryOpacity={confCountryOpacity}
+                    confCountrySize={confCountrySize} />
+                  <DraggableTimeline
+                    years={conferenceYears}
+                    setYear={selectYearHandler}
+                    selectedYear={selectedYear}
+                    redraw={redrawTimelineBool}
+                    setRedraw={setRedrawTimelineBool}
+                    setAnimate={setAnimate} />
+                  <MapControls
+                    setAnimation={animationHandler}
+                    animate={animate} firstYear={conferenceYears[0]}
+                    lastYear={conferenceYears[conferenceYears.length - 1]}
+                    setYear={yearMapButtonHandler}
+                    selectedConferences={selectedConferences}
+                    setAutoScrollSpeed={autoScrollSpeedHandler}
+                    setMapDisplayOptions={handleMapDisplay}
+                    animationSpeed={animationSpeed}
+                    mapDisplayOptions={mapDisplay}
+                    confCountryOpacity={confCountryOpacity}
+                    setConfCountryOpacity={handleConfCountryOpacity}
+                    confCountrySize={confCountrySize}
+                    setConfCountrySize={handleConfCountrySize} />
+                </div>
+                <div className='school-list-container'>
+                  <TeamList filteredConferenceList={filteredConferenceList} conferenceLogosObject={conferenceLogos} schoolIcons={schoolIcons} />
+                </div>
               </div>
-            </div>
-            <div className='col-12 col-md-5'>
-              <div className='chart-details-container'>
-                {selectedConferences.map((conference) => (
-                  chartData[conference] && Number(chartData[conference].labels[0]) <= selectedYear &&
-                  <div className='ind-conf-detail-container' style={{ backgroundColor: `${conferenceColors[conference].light}10`, }}>
-                    <ConferenceDetails
-                      conference={filteredConferenceList.filter((conferenceObject) => conferenceObject.conference == conference)[0]}
-                      confLogos={conferenceLogos}
-                      confColors={conferenceColors}
-                      selectedConference={conference} />
-                    <div className='chart-container'>
-                      <Line data={chartData[conference]} options={chartOptions} />
+              <div className='col-12 col-md-5'>
+                <div className='chart-details-container'>
+                  {selectedConferences.map((conference) => (
+                    chartData[conference] && Number(chartData[conference].labels[0]) <= selectedYear && chartData[conference].labels[chartData[conference].labels.length - 1] >= selectedYear &&
+                    <div className='ind-conf-detail-container' style={{ backgroundColor: `${conferenceColors[conference].light}10`, }}>
+                      <ConferenceDetails
+                        conference={filteredConferenceList.filter((conferenceObject) => conferenceObject.conference == conference)[0]}
+                        confLogos={conferenceLogos}
+                        confColors={conferenceColors}
+                        selectedConference={conference} />
+                      <div className='chart-container'>
+                        <Line data={chartData[conference]} options={chartOptions} />
+                      </div>
                     </div>
-                  </div>
-                ))}
-                {/* 
+                  ))}
+                  {/* 
                 <ChartControls
                   setAnimation={animationHandler}
                   animate={animate}
@@ -554,12 +564,47 @@ function App() {
                   lastYear={conferenceYears[conferenceYears.length - 1]}
                   setYear={yearMapButtonHandler} />
                    */}
+                </div>
               </div>
             </div>
           </div>
         </>
       }
     </>
+  )
+}
+
+function TeamList({ filteredConferenceList, conferenceLogosObject, schoolIcons }) {
+  console.log(filteredConferenceList)
+  return (
+    <div className='team-list'>
+      {filteredConferenceList.map((conference) => (
+        <div className='team-list-conf'>
+          <img src={conferenceLogosObject[conference.conference]} alt={conference.conference} className='team-list-conflogo' />
+          <div className='team-list-schools'>
+            <table className='team-list-table'>
+              <thead>
+                <tr>
+                  <th>{conference.conference}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {conference.schools.map((school) => (
+                  <>
+                    <tr key={school.id} className='team-list-table-row'> {/* Assuming each school has a unique 'id' property for the key */}
+                      <td><img src={schoolIcons[school.name].options.iconUrl} alt={school.name} className='team-list-schoollogo' /></td>
+                      <td>{school.name}</td>
+                      <td>{school.city}, {school.state}</td>
+                      {console.log(schoolIcons[school.name])}
+                    </tr>
+                  </>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -664,7 +709,7 @@ function AutoScrollButton({ setAnimation, animate }) {
   )
 }
 
-function NavBar({ conferenceNames, selectConference, searchYears, conferenceLogosObject, sportHandler, selectedConferences, sport, preprogrammedAnimations }) {
+function NavBar({ conferenceNames, historicalConferenceNames, selectConference, searchYears, conferenceLogosObject, sportHandler, selectedConferences, sport, preprogrammedAnimations }) {
   return (
     <>
       <nav className="navbar navbar-main navbar-expand-lg" >
@@ -687,6 +732,28 @@ function NavBar({ conferenceNames, selectConference, searchYears, conferenceLogo
                 <div className="conf-select-container">
                   <ul className="dropdown-menu list-inline dropdown-menu-conferences" aria-labelledby="navbarDropdown">
                     {conferenceNames.map((conferenceName) => (
+                      <li key={conferenceName} className='list-inline-item'>
+                        <button
+                          style={{ height: "3.9rem", backgroundColor: selectedConferences.includes(conferenceName) ? "#f1f1f1" : 'white' }}
+                          onClick={(e) => { e.stopPropagation(); selectConference(e) }}
+                          data-conf-name={conferenceName}
+                          className='dropdown-item'>
+                          <img src={conferenceLogosObject[conferenceName]} alt={conferenceName}
+                            className='conference-selection-img' />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </li>
+              <li className="nav-item dropdown">
+                <a className="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Historical Conferences
+                </a>
+                <div className="conf-select-container">
+                  <ul className="dropdown-menu list-inline dropdown-menu-conferences" aria-labelledby="navbarDropdown">
+                    {historicalConferenceNames.map((conferenceName) => (
                       <li key={conferenceName} className='list-inline-item'>
                         <button
                           style={{ height: "3.9rem", backgroundColor: selectedConferences.includes(conferenceName) ? "#f1f1f1" : 'white' }}
@@ -930,11 +997,6 @@ const DraggableTimeline = ({ years, setYear, selectedYear, redraw, setRedraw, se
 
 function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedConferences, mapElements, confColors, countryOpacity, confCountrySize }) {
 
-  // var myIcon = L.icon({
-  //   iconUrl: APIURL + '/media/images/conf_logos/ncaa.png',
-  //   iconSize: [10, 10],
-  // });
-  
   const mapRef = useRef(null);
   const containerRef = useRef(null);
   const [width, setwidth] = useState(window.innerWidth);

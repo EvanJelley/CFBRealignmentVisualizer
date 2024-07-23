@@ -6,9 +6,33 @@
     (135,106,75) - Brown
 */
 
+.backdrop {
+    position: fixed;
+    background-size: cover;
+    background-attachment: fixed;
+    background-position: center;
+    width: 100%;
+    z-index: -1;
+}
+
+.loading {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    z-index: 1000;
+}
+
+.main-app-container {
+    position: relative;
+    z-index: 100;
+}
+
 /* General Styles */
 body {
     font-family: "Montserrat", sans-serif;
+    background: white;
 }
 
 #mapcontainer { 
@@ -142,6 +166,7 @@ body {
 
 /* Map */
 .map-container {
+    background-color: white;
     border: 1px solid rgb(107, 135, 165);
     border-radius: 1rem;
     overflow: hidden;
@@ -391,6 +416,7 @@ body {
 }
 
 .chart-details-container {
+    background-color: white;
     border: 1px solid rgb(107, 135, 165);
     border-radius: 20px;
     overflow: scroll;
@@ -486,4 +512,80 @@ body {
     color: rgb(0, 37, 76);
     background-color: white;
     border-top: 1px solid rgb(107, 135, 165);
+}
+
+/* School List */
+
+.school-list-container {
+    background-color: white;
+    border: 1px solid rgb(107, 135, 165);
+    border-radius: 1rem;
+    overflow: scroll;
+    margin-bottom: 1rem;
+    height: 70vh;
+}
+
+.team-list-conf {
+    position: relative;
+    width: 100%;
+    margin-bottom: 2rem;
+}
+
+.team-list-conflogo {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: auto; /* This centers the element */
+    width: 50%; /* Adjust width as needed */
+    background-size: cover;
+    z-index: 1; /* Lower z-index so it sits in the background */
+    opacity: 0.1;
+}
+
+.team-list-schools {
+    position: relative; /* This ensures it's positioned in the stacking context */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 1rem;
+    z-index: 2; /* Higher z-index so it sits in front */
+}
+
+.team-list-schoollogo {
+    width: 1.5rem;
+    height: auto;
+    margin: 0 1rem;
+}
+
+.team-list-table-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: .5rem 2rem;
+    border-bottom: 1px solid rgb(107, 135, 165);
+}
+
+.team-list-table-row:hover {
+    background-color: rgb(107, 135, 165);
+    color: white;
+    cursor: pointer;
+}
+
+.team-list-table-row td {
+    margin: 0 1.5rem;
+}
+
+.team-list-table {
+    width: 100%;
+}
+
+.team-list-schools th {
+    align-items: center;
+    justify-content: center;
+    border-bottom: 2px solid rgb(107, 135, 165);
+    font-size: 2rem;
+    margin: auto;
+    font-family: "Crimson Text", serif;
 }

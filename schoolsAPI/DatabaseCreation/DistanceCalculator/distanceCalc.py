@@ -647,12 +647,97 @@ def readCSV(Conference, endYear):
 #     for school in era.schools:
 #         print(school.name)
 
-SWCEras, SWCSchools = readCSV("SWC", 1996)
+# SWCEras, SWCSchools = readCSV("SWC", 1996)
 
-for era in SWCEras:
+# BigWestEras, BigWestSchools = readCSV("BigWest", 1999)
+
+# SkylineEras, SkylineSchools = readCSV("Skyline", 1961) 
+
+WACEras, WACSchools = readCSV("WAC", 2011)
+
+
+for era in WACEras:
     print(era.name, era.year)
     for school in era.schools:
         print(school.name)
+
+def buildHistoricConferences(apps, schema_editor):
+    ConferenceBuilder(apps, schema_editor, "BigEight", 1996)
+    ConferenceBuilder(apps, schema_editor, "SWC", 1996)
+    ConferenceBuilder(apps, schema_editor, "BigWest", 1999)
+    ConferenceBuilder(apps, schema_editor, "Border", 1961)
+    ConferenceBuilder(apps, schema_editor, "Skyline", 1961)
+    ConferenceBuilder(apps, schema_editor, "WAC", 2011)
+
+
+def ConferenceBuilder(apps, schema_editor, conferenceName, endYear):
+    ConferenceName = apps.get_model('conferences', 'ConferenceName')
+    School = apps.get_model('conferences', 'School')
+    Year = apps.get_model('conferences', 'Year')
+    ConferenceByYear = apps.get_model('conferences', 'ConferenceByYear')
+    MajorCity = apps.get_model('conferences', 'MajorCity')
+
+    eras, schools = readCSV(conferenceName, endYear)
+
+    if not ConferenceName.objects.filter(name=conferenceName).exists():
+        ConferenceName.objects.create(name=conferenceName)
+
+    for university in schools:
+        if not School.objects.filter(name=university.name).exists():
+            School.objects.create(name=university.name, city=university.city, state=university.state, latitude=university.latitude, longitude=university.longitude)                            
+
+    for confERA in eras:
+        if confERA.fBallSchools == confERA.bBallSchools:
+            if not MajorCity.objects.filter(name=confERA.capital.city).exists():
+                MajorCity.objects.create(name=confERA.capital.city, state=confERA.capital.state, latitude=confERA.capital.latitude, longitude=confERA.capital.longitude)
+            conference_by_year = ConferenceByYear.objects.create(year=Year.objects.get(year=confERA.year),
+                                            conference=ConferenceName.objects.get(name=conferenceName),
+                                            football=True,
+                                            basketball=True,
+                                            centerLat= confERA.geoCenter[0],
+                                            centerLon= confERA.geoCenter[1],
+                                            capital= MajorCity.objects.get(name=confERA.capital.city),
+                                            avgDistanceFromCenter= confERA.avgDistanceFromGeoCenter,
+                                            avgDistanceBetweenSchools= confERA.avgDistanceFromOtherSchools)
+            uniNames = []
+            for team in confERA.schools:
+                uniNames.append(team.name)
+            conference_by_year.schools.set(School.objects.filter(name__in=uniNames))
+        else:
+            if not MajorCity.objects.filter(name=confERA.bBallCapital.city).exists():
+                MajorCity.objects.create(name=confERA.bBallCapital.city, state=confERA.bBallCapital.state, latitude=confERA.bBallCapital.latitude, longitude=confERA.bBallCapital.longitude)
+
+            if not MajorCity.objects.filter(name=confERA.fBallCapital.city).exists():
+                MajorCity.objects.create(name=confERA.fBallCapital.city, state=confERA.fBallCapital.state, latitude=confERA.fBallCapital.latitude, longitude=confERA.fBallCapital.longitude)
+            
+            footballSchools = []
+            basketballSchools = []
+            for team in confERA.fBallSchools:
+                footballSchools.append(team.name)
+            for team in confERA.bBallSchools:
+                basketballSchools.append(team.name)
+            conference_by_year_fball = ConferenceByYear.objects.create(year=Year.objects.get(year=confERA.year),
+                conference=ConferenceName.objects.get(name=conferenceName),
+                football=True,
+                basketball=False,
+                centerLat= confERA.fBallGeoCenter[0],
+                centerLon= confERA.fBallGeoCenter[1],
+                capital= MajorCity.objects.get(name=confERA.fBallCapital.city),
+                avgDistanceFromCenter= confERA.fBallAvgDistanceFromGeoCenter,
+                avgDistanceBetweenSchools= confERA.fBallAvgDistanceFromOtherSchools)
+            conference_by_year_bball = ConferenceByYear.objects.create(year=Year.objects.get(year=confERA.year),
+                conference=ConferenceName.objects.get(name=conferenceName),
+                football=False,
+                basketball=True,
+                centerLat= confERA.bBallGeoCenter[0],
+                centerLon= confERA.bBallGeoCenter[1],
+                capital= MajorCity.objects.get(name=confERA.bBallCapital.city),
+                avgDistanceFromCenter= confERA.bBallAvgDistanceFromGeoCenter,
+                avgDistanceBetweenSchools= confERA.bBallAvgDistanceFromOtherSchools)
+            
+            conference_by_year_fball.schools.set(School.objects.filter(name__in=footballSchools))
+            conference_by_year_bball.schools.set(School.objects.filter(name__in=basketballSchools))
+
 
 
 def SWCBuilder(apps, schema_editor):

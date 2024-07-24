@@ -88,7 +88,7 @@ function App() {
 
 
   const [conferenceNames, setConferenceNames] = useState(["SEC", "Big Ten", "ACC", "Big 12", "Pac 12", "Mountain West", "Sun Belt", "CUSA", "MAC", "AAC", "Big East", "NCAA"])
-  const [historicalConferenceNames, setHistoricalConferenceNames] = useState(["SWC", "Big Eight"])
+  const [historicalConferenceNames, setHistoricalConferenceNames] = useState(["SWC", "Big Eight", "WAC", "Big West", "Skyline", "Border"])
   const [selectedConferences, setSelectedConferences] = useState([])
   const [conferenceYears, setConferenceYears] = useState([])
   const [selectedYear, setSelectedYear] = useState('')
@@ -296,6 +296,17 @@ function App() {
     const button = e.target.closest('button');
     const animation = button.getAttribute('data-anim-name');
     switch (animation) {
+      case 'All of CFB History':
+        setSelectedConferences(['SEC', 'Big Ten', 'ACC', 'Big 12', 'Pac 12', 'Mountain West', 'Sun Belt', 'CUSA', 'MAC', 'AAC', "SWC", "Big Eight", "WAC", "Big West", "Skyline", "Border"]);
+        yearMapButtonHandler(1896);
+        setMapDisplay({ teams: false, capitals: true, lines: true, confCountry: true });
+        setConfCountryOpacity(0.9);
+        setConfCountrySize(50);
+        setAnimationSpeed(500);
+        setTimeout(() => {
+          setAnimate(true);
+        }, 2000);
+        break;
       case 'Modern Expansion':
         setSelectedConferences(['SEC', 'Big Ten', 'Big 12', 'Pac 12', 'ACC']);
         yearMapButtonHandler(2009);
@@ -490,7 +501,7 @@ function App() {
         </div>
         :
         <>
-          <img src="/images/football_backdrop.jpg" className='backdrop' />
+          <img src={sport == 'football' ? '/images/football_backdrop.jpg' : '/images/basketball_backdrop.webp'} className='backdrop' />
           <div className='main-app-container'>
             <NavBar conferenceNames={conferenceNames}
               historicalConferenceNames={historicalConferenceNames}
@@ -580,7 +591,13 @@ function TeamList({ filteredConferenceList, conferenceLogosObject, schoolIcons }
     <div className='team-list'>
       {filteredConferenceList.map((conference) => (
         <div className='team-list-conf'>
-          <img src={conferenceLogosObject[conference.conference]} alt={conference.conference} className='team-list-conflogo' />
+          <img 
+            src={conferenceLogosObject[conference.conference]} 
+            alt={conference.conference} 
+            className='team-list-conflogo' 
+            style={{ 
+              height: conference.schools.length <= 6 ? "7rem" : null, 
+              width: conference.schools.length <= 6 ? "auto" : null}} />
           <div className='team-list-schools'>
             <table className='team-list-table'>
               <thead>
@@ -832,6 +849,11 @@ function NavBar({ conferenceNames, historicalConferenceNames, selectConference, 
                   QuickSelect Animations
                 </a>
                 <ul className="dropdown-menu" aria-labelledby="navbarDropdown">
+                  <li key={'AllCFB'} className='dropdown-item'>
+                    <button onClick={preprogrammedAnimations} className='dropdown-item' data-anim-name="All of CFB History">
+                      All of CFB History
+                    </button>
+                  </li>
                   <li key={'ModernExpansion'} className='dropdown-item'>
                     <button onClick={preprogrammedAnimations} className='dropdown-item' data-anim-name="Modern Expansion">
                       Modern Expansion

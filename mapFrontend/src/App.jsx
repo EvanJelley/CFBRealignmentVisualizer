@@ -17,6 +17,7 @@ import Draggable from 'react-draggable';
 import { Line } from 'react-chartjs-2';
 import Chart from "chart.js/auto";
 import { CategoryScale, plugins } from "chart.js";
+import { averageDistanceCalc } from './distances';
 
 Chart.register(CategoryScale);
 
@@ -109,10 +110,11 @@ function App() {
       });
       setConferenceNames(conferenceNameList)
 
-      setSelectedConferences([conferenceNameList[0]])
+      setSelectedConferences([conferenceNameList[0], conferenceNameList[1]])
 
       setFilteredConferenceList(response.data.filter((conference) => conference.conference == conferenceNameList[0]))
 
+      setSelectedYear(1932)
 
       const logoResponse = await axios.get(APIURL + '/api/conferencelogos/')
       let logos = {};
@@ -614,6 +616,7 @@ function TeamList({ filteredConferenceList, conferenceLogosObject, schoolIcons }
                       <td>{school.city}, {school.state}</td>
                       {console.log(schoolIcons[school.name])}
                     </tr>
+                    <SchoolDeatils school={school} schoolIcons={schoolIcons} conferenceEra={conference} />
                   </>
                 ))}
               </tbody>
@@ -621,6 +624,25 @@ function TeamList({ filteredConferenceList, conferenceLogosObject, schoolIcons }
           </div>
         </div>
       ))}
+    </div>
+  )
+}
+
+function SchoolDeatils({ school, schoolIcons, conferenceEra }) {
+  let otherSchools = conferenceEra.schools.filter((schoolObject) => schoolObject.name !== school.name);
+  let otherSchoolCoord = otherSchools.map((schoolObject) => [schoolObject.latitude, schoolObject.longitude]);
+  console.log(otherSchoolCoord.length);
+  let schoolCoord = [school.latitude, school.longitude];
+
+  let avgDistance = averageDistanceCalc(schoolCoord, otherSchoolCoord, "degrees");
+  
+  return (
+    <div className='school-details'>
+      {/* <img src={schoolIcons[school.name].options.iconUrl} alt={school.name} className='school-details-logo' /> */}
+      <h3>{school.name}</h3>
+      <p>{school.city}, {school.state}</p>
+      <p>Coordinates: {[school.latitude, school.longitude]}</p>
+      <p>Avg Distance to Other Schools: {avgDistance.toFixed(2)} mi</p>
     </div>
   )
 }

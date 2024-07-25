@@ -159,25 +159,38 @@ class conference(object):
     
     def findAvgDistanceFromOtherSchools(self):
         if self.bBallSchools == self.fBallSchools:
-            distance = 0
+            avgDistances = []
             for school in self.schools:
+                distance = 0
                 for school2 in self.schools:
-                    distance += pointToPointCalc(math.radians(school.getLatitude()), math.radians(school.getLongitude()), math.radians(school2.getLatitude()), math.radians(school2.getLongitude()))
-            self.avgDistanceFromOtherSchools = round(distance / (len(self.schools) * len(self.schools)), 2)
+                    if school != school2:
+                        distance += pointToPointCalc(math.radians(school.getLatitude()), math.radians(school.getLongitude()), math.radians(school2.getLatitude()), math.radians(school2.getLongitude()))
+                avgDistances.append(round(distance / (len(self.schools) - 1), 2))
+            self.avgDistanceFromOtherSchools = round(sum(avgDistances) / len(avgDistances), 2)
         else:
-            distance = 0
+            bBallAvgDistances = []
             for school in self.bBallSchools:
+                distance = 0
                 for school2 in self.bBallSchools:
-                    distance += pointToPointCalc(math.radians(school.getLatitude()), math.radians(school.getLongitude()), math.radians(school2.getLatitude()), math.radians(school2.getLongitude()))
-            self.bBallAvgDistanceFromOtherSchools = round(distance / (len(self.bBallSchools) * len(self.bBallSchools)), 2)
+                    if school != school2:
+                        distance += pointToPointCalc(math.radians(school.getLatitude()), math.radians(school.getLongitude()), math.radians(school2.getLatitude()), math.radians(school2.getLongitude()))
+                    bBallAvgDistances.append(round(distance / (len(self.bBallSchools) - 1), 2))
+            if bBallAvgDistances:  # Check if the list is not empty
+                self.bBallAvgDistanceFromOtherSchools = round(sum(bBallAvgDistances) / len(bBallAvgDistances), 2)
             if self.name == "BigEast":
                 self.fBallAvgDistanceFromOtherSchools = 0
             else:
-                distance = 0
+                fBallAvgDistances = []
                 for school in self.fBallSchools:
+                    distance = 0
                     for school2 in self.fBallSchools:
-                        distance += pointToPointCalc(math.radians(school.getLatitude()), math.radians(school.getLongitude()), math.radians(school2.getLatitude()), math.radians(school2.getLongitude()))
-                self.fBallAvgDistanceFromOtherSchools = round(distance / (len(self.fBallSchools) * len(self.fBallSchools)), 2)
+                        if school != school2:  # Ensure we don't calculate distance from the school to itself
+                            distance += pointToPointCalc(math.radians(school.getLatitude()), math.radians(school.getLongitude()), math.radians(school2.getLatitude()), math.radians(school2.getLongitude()))
+                        fBallAvgDistances.append(round(distance / (len(self.fBallSchools) - 1), 2))
+                if fBallAvgDistances:  # Check if the list is not empty
+                    self.fBallAvgDistanceFromOtherSchools = round(sum(fBallAvgDistances) / len(fBallAvgDistances), 2)
+                else:
+                    self.fBallAvgDistanceFromOtherSchools = 0
 
     def __str__(self):
         return self.name + " " + str(self.year)
@@ -611,9 +624,9 @@ def readCSV(Conference, endYear):
                     schoolObjects.append(schoolObj)
 
                 if int(row[2]) <= i:
-                    if str(row[3]) == "False":
+                    if str(row[3]) == "False" or str(row[3]) == "":
                         confEra.addSchool(schoolObj)
-                    elif int(row[3]) >= i:
+                    elif int(row[3]) > i:
                         confEra.addSchool(schoolObj)
                                 
             # Find the schools that play basketball and football
@@ -653,13 +666,17 @@ def readCSV(Conference, endYear):
 
 # SkylineEras, SkylineSchools = readCSV("Skyline", 1961) 
 
-WACEras, WACSchools = readCSV("WAC", 2011)
+# WACEras, WACSchools = readCSV("WAC", 2011)
+
+# PAC12Eras, PAC12Schools = readCSV("Pac12", 2024)
+
+# ACCEras, ACCSchools = readCSV("ACC", 2024)
 
 
-for era in WACEras:
-    print(era.name, era.year)
-    for school in era.schools:
-        print(school.name)
+# for era in ACCEras:
+#     print(era.name, era.year, era.avgDistanceFromGeoCenter, era.avgDistanceFromOtherSchools)
+#     for school in era.schools:
+#         print(school.name)
 
 def buildHistoricConferences(apps, schema_editor):
     ConferenceBuilder(apps, schema_editor, "BigEight", 1996)
@@ -668,6 +685,24 @@ def buildHistoricConferences(apps, schema_editor):
     ConferenceBuilder(apps, schema_editor, "Border", 1961)
     ConferenceBuilder(apps, schema_editor, "Skyline", 1961)
     ConferenceBuilder(apps, schema_editor, "WAC", 2011)
+
+def correctPac12DistanceBetweenSchools(apps, schema_editor):
+    recalculateConferences(apps, schema_editor, "Pac12", 2024)
+
+def recalculateConferences(apps, schema_editor, conferenceName, endYear):
+    ConferenceByYear = apps.get_model('conferences', 'ConferenceByYear')
+
+    eras, schools = readCSV(conferenceName, endYear)
+
+    for confERA in eras:
+        if confERA.fBallSchools == confERA.bBallSchools:
+            print("Recalculating " + conferenceName + " " + str(confERA.year) + "..." + " " + str(confERA.avgDistanceFromOtherSchools))
+            ConferenceByYear.objects.filter(year__year=confERA.year, conference__name=conferenceName).update(avgDistanceBetweenSchools=confERA.avgDistanceFromOtherSchools)
+        else:
+            ConferenceByYear.objects.filter(year__year=confERA.year, conference__name=conferenceName, football=True).update(avgDistanceBetweenSchools=confERA.fBallAvgDistanceFromOtherSchools)
+            ConferenceByYear.objects.filter(year__year=confERA.year, conference__name=conferenceName, basketball=True).update(avgDistanceBetweenSchools=confERA.bBallAvgDistanceFromOtherSchools)
+            
+
 
 
 def ConferenceBuilder(apps, schema_editor, conferenceName, endYear):

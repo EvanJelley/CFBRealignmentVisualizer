@@ -174,7 +174,7 @@ class conference(object):
                 for school2 in self.bBallSchools:
                     if school != school2:
                         distance += pointToPointCalc(math.radians(school.getLatitude()), math.radians(school.getLongitude()), math.radians(school2.getLatitude()), math.radians(school2.getLongitude()))
-                    bBallAvgDistances.append(round(distance / (len(self.bBallSchools) - 1), 2))
+                bBallAvgDistances.append(round(distance / (len(self.bBallSchools) - 1), 2))
             if bBallAvgDistances:  # Check if the list is not empty
                 self.bBallAvgDistanceFromOtherSchools = round(sum(bBallAvgDistances) / len(bBallAvgDistances), 2)
             if self.name == "BigEast":
@@ -186,7 +186,7 @@ class conference(object):
                     for school2 in self.fBallSchools:
                         if school != school2:  # Ensure we don't calculate distance from the school to itself
                             distance += pointToPointCalc(math.radians(school.getLatitude()), math.radians(school.getLongitude()), math.radians(school2.getLatitude()), math.radians(school2.getLongitude()))
-                        fBallAvgDistances.append(round(distance / (len(self.fBallSchools) - 1), 2))
+                    fBallAvgDistances.append(round(distance / (len(self.fBallSchools) - 1), 2))
                 if fBallAvgDistances:  # Check if the list is not empty
                     self.fBallAvgDistanceFromOtherSchools = round(sum(fBallAvgDistances) / len(fBallAvgDistances), 2)
                 else:
@@ -655,28 +655,51 @@ def readCSV(Conference, endYear):
 
 # BigEightEras, BigEightSchools = readCSV("BigEight", 1996)
 
-# for era in BigEightEras:
-#     print(era.name, era.year)
-#     for school in era.schools:
-#         print(school.name)
-
 # SWCEras, SWCSchools = readCSV("SWC", 1996)
 
-# BigWestEras, BigWestSchools = readCSV("BigWest", 1999)
+# BigWestEras, BigWestSchools = readCSV("BigWest", 2000)
 
-# SkylineEras, SkylineSchools = readCSV("Skyline", 1961) 
+# BorderEras, BorderSchools = readCSV("Border", 1962)
 
-# WACEras, WACSchools = readCSV("WAC", 2011)
+# SkylineEras, SkylineSchools = readCSV("Skyline", 1962) 
+
+# WACEras, WACSchools = readCSV("WAC", 2012)
 
 # PAC12Eras, PAC12Schools = readCSV("Pac12", 2024)
 
 # ACCEras, ACCSchools = readCSV("ACC", 2024)
 
+# SECCEras, SECCSchools = readCSV("SEC", 2024)
 
-# for era in ACCEras:
-#     print(era.name, era.year, era.avgDistanceFromGeoCenter, era.avgDistanceFromOtherSchools)
-#     for school in era.schools:
-#         print(school.name)
+# Big10Eras, Big10Schools = readCSV("BigTen", 2024)
+
+# Big12Eras, Big12Schools = readCSV("Big12", 2024)
+
+# CUSAEras, CUSASchools = readCSV("CUSA", 2024)
+
+# MACEras, MACSchools = readCSV("MAC", 2024)
+
+# SunBeltEras, SunBeltSchools = readCSV("SunBelt", 2024)
+
+# MountainWestEras, MountainWestSchools = readCSV("MountainWest", 2024)
+
+
+# for era in SECCEras:
+#     print(era.name, era.year, era.fBallAvgDistanceFromOtherSchools, era.bBallAvgDistanceFromOtherSchools)
+#     if era.fBallSchools == era.bBallSchools:
+#         print(era.name, era.year, era.avgDistanceFromOtherSchools)
+#         for school in era.schools:
+#             print(school.name)
+#         print("\n")
+#     else:
+#         print("Football")
+#         for school in era.fBallSchools:
+#             print(school.name)
+#         print("\n")
+#         print("Basketball")
+#         for school in era.bBallSchools:
+#             print(school.name)
+#         print("\n")
 
 def buildHistoricConferences(apps, schema_editor):
     ConferenceBuilder(apps, schema_editor, "BigEight", 1996)
@@ -688,6 +711,27 @@ def buildHistoricConferences(apps, schema_editor):
 
 def correctPac12DistanceBetweenSchools(apps, schema_editor):
     recalculateConferences(apps, schema_editor, "Pac12", 2024)
+
+
+
+def correctMoreConferences(apps, schema_editor):
+    recalculateConferences(apps, schema_editor, "ACC", 2024)
+    recalculateConferences(apps, schema_editor, "SEC", 2024)
+    recalculateConferences(apps, schema_editor, "BigTen", 2024)
+    recalculateConferences(apps, schema_editor, "BigEight", 1996)
+    ConferenceBuilder(apps, schema_editor, "BigWest", 2000)
+    recalculateConferences(apps, schema_editor, "Border", 1962)
+    recalculateConferences(apps, schema_editor, "Skyline", 1962)
+    recalculateConferences(apps, schema_editor, "SWC", 1996)
+    ConferenceBuilder(apps, schema_editor, "WAC", 2012)
+    recalculateConferences(apps, schema_editor, "Big12", 2024)
+    recalculateConferences(apps, schema_editor, "CUSA", 2024)
+    recalculateConferences(apps, schema_editor, "MAC", 2024)
+    recalculateConferences(apps, schema_editor, "SunBelt", 2024)
+    recalculateConferences(apps, schema_editor, "MountainWest", 2024)
+
+
+
 
 def recalculateConferences(apps, schema_editor, conferenceName, endYear):
     ConferenceByYear = apps.get_model('conferences', 'ConferenceByYear')

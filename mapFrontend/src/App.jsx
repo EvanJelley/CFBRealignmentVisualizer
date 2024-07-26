@@ -17,7 +17,7 @@ import Draggable from 'react-draggable';
 import { Line } from 'react-chartjs-2';
 import Chart from "chart.js/auto";
 import { CategoryScale, plugins } from "chart.js";
-import { averageDistanceCalc } from './distances';
+import { averageDistanceCalc, pointToPointCalc } from './distances';
 
 Chart.register(CategoryScale);
 
@@ -292,6 +292,7 @@ function App() {
         break;
     }
     setSelectedConferences(newConferenceList)
+    setRedrawTimelineBool(true)
   }
 
   const preprogrammedAnimationsHandler = (e) => {
@@ -557,7 +558,7 @@ function App() {
               <div className='col-12 col-md-5'>
                 <div className='chart-details-container'>
                   {selectedConferences.map((conference) => (
-                    chartData[conference] && Number(chartData[conference].labels[0]) <= selectedYear && chartData[conference].labels[chartData[conference].labels.length - 1] >= selectedYear &&
+                    chartData[conference] && Number(chartData[conference].labels[0]) <= selectedYear && chartData[conference].labels[chartData[conference].labels.length - 1] >= selectedYear ?
                     <div className='ind-conf-detail-container' style={{ backgroundColor: `${conferenceColors[conference].light}10`, }}>
                       <ConferenceDetails
                         conference={filteredConferenceList.filter((conferenceObject) => conferenceObject.conference == conference)[0]}
@@ -566,6 +567,17 @@ function App() {
                         selectedConference={conference} />
                       <div className='chart-container'>
                         <Line data={chartData[conference]} options={chartOptions} />
+                      </div>
+                    </div>
+                    :
+                    <div className='ind-conf-detail-container' style={{ backgroundColor: `${conferenceColors[conference].light}10`, }}>
+                      <ConferenceDetails
+                        conference={filteredConferenceList.filter((conferenceObject) => conferenceObject.conference == conference)[0]}
+                        confLogos={conferenceLogos}
+                        confColors={conferenceColors}
+                        selectedConference={conference} />
+                      <div className='chart-container'>
+                        <p>No Data Available</p>
                       </div>
                     </div>
                   ))}
@@ -588,18 +600,41 @@ function App() {
 }
 
 function TeamList({ filteredConferenceList, conferenceLogosObject, schoolIcons }) {
-  console.log(filteredConferenceList)
+  const [allTeams, setAllTeams] = useState([]);
+  const [selectedTeams, setSelectedTeams] = useState([]);
+
+  const selectTeamHandler = (e) => {
+    const button = e.target.closest('button');
+    const teamName = button.getAttribute('data-team-name');
+    selectedTeams.includes(teamName) ? setSelectedTeams(selectedTeams.filter((team) => team !== teamName)) : setSelectedTeams([...selectedTeams, teamName])
+  }
+
+  useEffect(() => {
+    let teams = [];
+    filteredConferenceList.map((conference) => {
+      conference.schools.map((school) => {
+        teams.push(school.name)
+      })
+    });
+    setAllTeams(teams);
+  }, [filteredConferenceList])
+
+  useEffect(() => {
+    selectedTeams.filter((team) => !allTeams.includes(team)).length > 0 ? setSelectedTeams(selectedTeams.filter((team) => allTeams.includes(team))) : null
+  }, [allTeams])
+
   return (
     <div className='team-list'>
       {filteredConferenceList.map((conference) => (
         <div className='team-list-conf'>
-          <img 
-            src={conferenceLogosObject[conference.conference]} 
-            alt={conference.conference} 
-            className='team-list-conflogo' 
-            style={{ 
-              height: conference.schools.length <= 6 ? "7rem" : null, 
-              width: conference.schools.length <= 6 ? "auto" : null}} />
+          <img
+            src={conferenceLogosObject[conference.conference]}
+            alt={conference.conference}
+            className='team-list-conflogo'
+            style={{
+              height: conference.schools.length <= 6 ? "7rem" : null,
+              width: conference.schools.length <= 6 ? "auto" : null
+            }} />
           <div className='team-list-schools'>
             <table className='team-list-table'>
               <thead>
@@ -610,13 +645,16 @@ function TeamList({ filteredConferenceList, conferenceLogosObject, schoolIcons }
               <tbody>
                 {conference.schools.map((school) => (
                   <>
-                    <tr key={school.id} className='team-list-table-row'> {/* Assuming each school has a unique 'id' property for the key */}
-                      <td><img src={schoolIcons[school.name].options.iconUrl} alt={school.name} className='team-list-schoollogo' /></td>
-                      <td>{school.name}</td>
-                      <td>{school.city}, {school.state}</td>
-                      {console.log(schoolIcons[school.name])}
-                    </tr>
-                    <SchoolDeatils school={school} schoolIcons={schoolIcons} conferenceEra={conference} />
+                    {selectedTeams.includes(school.name) ? <SchoolDeatails school={school} schoolIcons={schoolIcons} conferenceEra={conference} selectTeamHandler={selectTeamHandler} />
+                      :
+                      <button onClick={selectTeamHandler} data-team-name={school.name} className='team-list-table-row-button'>
+                        <tr key={school.id} className='team-list-table-row'>
+                          <td><img src={schoolIcons[school.name].options.iconUrl} alt={school.name} className='team-list-schoollogo' /></td>
+                          <td>{school.name}</td>
+                          <td>{school.city}, {school.state}</td>
+                          {console.log(schoolIcons[school.name])}
+                        </tr>
+                      </button>}
                   </>
                 ))}
               </tbody>
@@ -628,21 +666,40 @@ function TeamList({ filteredConferenceList, conferenceLogosObject, schoolIcons }
   )
 }
 
-function SchoolDeatils({ school, schoolIcons, conferenceEra }) {
+function SchoolDeatails({ school, schoolIcons, conferenceEra, selectTeamHandler }) {
   let otherSchools = conferenceEra.schools.filter((schoolObject) => schoolObject.name !== school.name);
   let otherSchoolCoord = otherSchools.map((schoolObject) => [schoolObject.latitude, schoolObject.longitude]);
   console.log(otherSchoolCoord.length);
   let schoolCoord = [school.latitude, school.longitude];
-
+  let capitalCoord = [conferenceEra.capital.latitude, conferenceEra.capital.longitude];
+  console.log(capitalCoord);
   let avgDistance = averageDistanceCalc(schoolCoord, otherSchoolCoord, "degrees");
-  
+  let distanceToCapital = pointToPointCalc(schoolCoord[0], schoolCoord[1], capitalCoord[0], capitalCoord[1], "degrees");
+
   return (
     <div className='school-details'>
-      {/* <img src={schoolIcons[school.name].options.iconUrl} alt={school.name} className='school-details-logo' /> */}
-      <h3>{school.name}</h3>
-      <p>{school.city}, {school.state}</p>
-      <p>Coordinates: {[school.latitude, school.longitude]}</p>
-      <p>Avg Distance to Other Schools: {avgDistance.toFixed(2)} mi</p>
+      <button onClick={selectTeamHandler} data-team-name={school.name} className='team-list-table-row-button'>
+        <h3>
+          <img src={schoolIcons[school.name].options.iconUrl} alt={school.name} className='school-details-schoollogo' />
+          {school.name}
+        </h3>
+      </button>
+      <table className='conference-details-table'>
+        <tbody>
+          <tr>
+            <td className='conference-details-category'>Location</td>
+            <td className='conference-details-item'>{school.city}, {school.state}</td>
+          </tr>
+          <tr>
+            <td className='conference-details-category'>Avg Distance to Other Schools</td>
+            <td className='conference-details-item'>{avgDistance.toFixed()} mi</td>
+          </tr>
+          <tr>
+            <td className='conference-details-category'>Distance From Capital</td>
+            <td className='conference-details-item'>{distanceToCapital.toFixed()} mi</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   )
 }
@@ -1248,7 +1305,7 @@ const HawaiiMapOverlay = ({ school, schoolIcons, conference, lineOptions, circle
 
 function ConferenceDetails({ conference, confLogos, confColors, selectedConference }) {
 
-  return (conference &&
+  return (conference ?
     <div className='conference-details'>
       <div className='conference-details-main'>
         <h3 className='conference-details-conference'>
@@ -1292,6 +1349,10 @@ function ConferenceDetails({ conference, confLogos, confColors, selectedConferen
           </tbody>
         </table>
       </div>
+    </div>
+    :
+    <div className='conference-details'>
+      <h3>No Data Available</h3>
     </div>
   )
 };

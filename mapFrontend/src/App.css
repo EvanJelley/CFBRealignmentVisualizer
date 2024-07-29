@@ -35,7 +35,7 @@ body {
     background: white;
 }
 
-#mapcontainer { 
+#mapcontainer {
     height: 23.5rem;
 }
 
@@ -61,7 +61,7 @@ body {
 
 /* Nav Styles */
 .navbar-main {
-    background-color: rgb(0,37,76);
+    background-color: rgb(0, 37, 76);
     color: white;
 }
 
@@ -88,7 +88,7 @@ body {
 }
 
 
-@media screen and (min-width: 768px){
+@media screen and (min-width: 768px) {
     .dropdown-menu-conferences {
         width: 26rem;
     }
@@ -96,7 +96,7 @@ body {
 
 .dropdown-menu-conferences button:focus {
     border: none;
-    outline: none;  
+    outline: none;
 }
 
 .dropdown-menu-conferences {
@@ -113,6 +113,11 @@ body {
 
 .dropdown-menu {
     z-index: 10000;
+}
+
+.quickselect-dropdown {
+    overflow: scroll;
+    height: 20rem;
 }
 
 /* Timeline Styles */
@@ -503,6 +508,21 @@ body {
     border-radius: 50%;
 }
 
+.out-of-range-button {
+    border: 1px solid rgb(107, 135, 165);
+    border-radius: 20px;
+    padding: 2rem;
+    outline: none;
+    background-color: inherit;
+    align-items: center;
+}
+
+.out-of-range-button:hover {
+    background-color: rgb(107, 135, 165);
+    color: white;
+    cursor: pointer;
+}
+
 /* Chart Controls */
 
 .chart-controls {
@@ -537,20 +557,25 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    margin: auto; /* This centers the element */
-    width: 50%; /* Adjust width as needed */
+    margin: auto;
+    /* This centers the element */
+    width: 50%;
+    /* Adjust width as needed */
     background-size: cover;
-    z-index: 1; /* Lower z-index so it sits in the background */
+    z-index: 1;
+    /* Lower z-index so it sits in the background */
     opacity: 0.1;
 }
 
 .team-list-schools {
-    position: relative; /* This ensures it's positioned in the stacking context */
+    position: relative;
+    /* This ensures it's positioned in the stacking context */
     display: flex;
     justify-content: center;
     align-items: center;
     margin: 1rem;
-    z-index: 2; /* Higher z-index so it sits in front */
+    z-index: 2;
+    /* Higher z-index so it sits in front */
 }
 
 .team-list-schoollogo {

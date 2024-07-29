@@ -17,7 +17,7 @@ import Draggable from 'react-draggable';
 import { Line } from 'react-chartjs-2';
 import Chart from "chart.js/auto";
 import { CategoryScale, plugins } from "chart.js";
-import { averageDistanceCalc, pointToPointCalc } from './distances';
+import { averageDistanceCalc, pointToPointCalc, calculateConvexHull } from './distances';
 
 Chart.register(CategoryScale);
 
@@ -72,6 +72,9 @@ function App() {
   const [hasError, setHasError] = useState(false)
   const [conferenceList, setConferenceList] = useState([])
   const [filteredConferenceList, setFilteredConferenceList] = useState([])
+  const [summaryStatsConfObject, setSummaryStatsConfObject] = useState({})
+
+
   const [conferenceIcons, setConferenceIcons] = useState({})
   const [conferenceLogos, setConferenceLogos] = useState({})
   const [schoolIcons, setSchoolIcons] = useState({})
@@ -83,7 +86,7 @@ function App() {
   const [redrawTimelineBool, setRedrawTimelineBool] = useState(false)
   const animateRef = useRef(animate)
   const [animationSpeed, setAnimationSpeed] = useState(500)
-  const [mapDisplay, setMapDisplay] = useState({ teams: true, capitals: true, lines: true, confCountry: true });
+  const [mapDisplay, setMapDisplay] = useState({ teams: true, capitals: true, lines: true, confCountry: true, schoolCircles: false });
   const [confCountryOpacity, setConfCountryOpacity] = useState(0.5)
   const [confCountrySize, setConfCountrySize] = useState(100)
 
@@ -125,6 +128,7 @@ function App() {
       });
       setConferenceLogos(logos);
       setConferenceColors(colors);
+      console.log(colors)
 
       const confIconsPromises = logoResponse.data.map(async (logo) => {
         const dimensions = await getImageDimmensions(logo.logo, CONFLOGOSIZE);
@@ -218,9 +222,52 @@ function App() {
         };
         conferenceCharts[conferenceName] = confData;
       });
+
+      let totalYears = [];
+      selectedConferenceList.map((conference) => {
+        totalYears.includes(conference.year) ? null : totalYears.push(conference.year)
+      });
+      totalYears.sort();
+
+      let summaryStats = {};
+      totalYears.forEach((year) => {
+        let currentConfs = selectedConferenceList.filter((conference) => conference.year === year);
+        let avgDistance = Number((currentConfs.reduce((a, b) => a + Number(b.avgDistanceBetweenSchools), 0) / currentConfs.length).toFixed(2));
+        let avgDistanceFromCenter = Number((currentConfs.reduce((a, b) => a + Number(b.avgDistanceFromCenter), 0) / currentConfs.length).toFixed(2));
+        summaryStats[year] = { avgDistance, avgDistanceFromCenter };
+      });
+
+      let ncaaData = {
+        labels: totalYears ? totalYears : [],
+        datasets: [
+          {
+            label: 'Average Distance Between Schools',
+            data: summaryStats ? totalYears.map((year) => summaryStats[year].avgDistance) : [],
+            pointStyle: summaryStats ? totalYears.map((year) =>
+              year === selectedYear ? sport === 'football' ? ballImages.football : ballImages.basketball : false) : [],
+            borderColor: conferenceColors["NCAA"] ? conferenceColors["NCAA"].main : '#000'
+          },
+          {
+            label: 'Average Distance from Center',
+            data: summaryStats ? totalYears.map((year) => summaryStats[year].avgDistanceFromCenter) : [],
+            pointStyle: summaryStats ? totalYears.map((year) =>
+              year === selectedYear ? sport === 'football' ? ballImages.football : ballImages.basketball : false) : [],
+            borderColor: conferenceColors["NCAA"] ? conferenceColors["NCAA"].dark : '#000'
+          },
+        ],
+      }
+
+      conferenceCharts['NCAA'] = ncaaData;
+
+      const currentAvgDistanceBetweenNCAA = summaryStats[selectedYear].avgDistance;
+      const currentAvgDistanceFromCenterNCAA = summaryStats[selectedYear].avgDistanceFromCenter;
+
+      createSummaryConf(selectedYear, sport, currentAvgDistanceBetweenNCAA, currentAvgDistanceFromCenterNCAA)
+
+      console.log(summaryStatsConfObject)
+
       setChartData(conferenceCharts);
     };
-
     setCharts().catch(console.error);
   }, [selectedConferences, sport, selectedYear]);
 
@@ -244,6 +291,23 @@ function App() {
   useEffect(() => {
     getConferences()
   }, [])
+
+  const createSummaryConf = (yearVar, sportVar, avgDistanceBetween, avgDistanceFromCenter) => {
+    const schoolList = filteredConferenceList.map((conference) => conference.schools).flat();
+    let confObject = {
+      id: 0,
+      year: yearVar,
+      conference: "NCAA",
+      football: sportVar === 'football' ? true : false,
+      basketball: sportVar === 'basketball' ? true : false,
+      schools: schoolList,
+      avgDistanceBetweenSchools: avgDistanceBetween,
+      avgDistanceFromCenter: avgDistanceFromCenter,
+    }
+    setSummaryStatsConfObject(confObject)
+  }
+
+
 
   const sportHandler = (e) => {
     const button = e.target.closest('button');
@@ -283,7 +347,7 @@ function App() {
         setSport('basketball')
         break;
       case "NCAA":
-        newConferenceList = ["SEC", "Big Ten", "ACC", "Big 12", "Pac 12", "Mountain West", "Sun Belt", "CUSA", "MAC"]
+        newConferenceList = ["SEC", "Big Ten", "ACC", "Big 12", "Pac 12", "Mountain West", "Sun Belt", "CUSA", "MAC", "AAC", "SWC", "Big Eight", "WAC", "Big West", "Skyline", "Border", "Big East"]
         break;
       default:
         conferenceName == "Big East" ? setSport('basketball') : null
@@ -302,7 +366,7 @@ function App() {
       case 'All of CFB History':
         setSelectedConferences(['SEC', 'Big Ten', 'ACC', 'Big 12', 'Pac 12', 'Mountain West', 'Sun Belt', 'CUSA', 'MAC', 'AAC', "SWC", "Big Eight", "WAC", "Big West", "Skyline", "Border"]);
         yearMapButtonHandler(1896);
-        setMapDisplay({ teams: false, capitals: true, lines: true, confCountry: true });
+        setMapDisplay({ teams: false, capitals: true, lines: true, confCountry: true, schoolCircles: false });
         setConfCountryOpacity(0.9);
         setConfCountrySize(50);
         setAnimationSpeed(500);
@@ -312,8 +376,8 @@ function App() {
         break;
       case 'Modern Expansion':
         setSelectedConferences(['SEC', 'Big Ten', 'Big 12', 'Pac 12', 'ACC']);
-        yearMapButtonHandler(2009);
-        setMapDisplay({ teams: false, capitals: true, lines: true, confCountry: true });
+        yearMapButtonHandler(2001);
+        setMapDisplay({ teams: false, capitals: true, lines: true, confCountry: true, schoolCircles: false });
         setConfCountryOpacity(0.5);
         setConfCountrySize(50);
         setAnimationSpeed(500);
@@ -324,7 +388,7 @@ function App() {
       case 'Death of the Pac 12':
         setSelectedConferences(['Pac 12', 'Big Ten', 'Big 12', 'ACC']);
         yearMapButtonHandler(2023);
-        setMapDisplay({ teams: false, capitals: true, lines: true, confCountry: true });
+        setMapDisplay({ teams: false, capitals: true, lines: true, confCountry: true, schoolCircles: false });
         setConfCountryOpacity(0.8);
         setConfCountrySize(100);
         setAnimationSpeed(1000);
@@ -335,7 +399,7 @@ function App() {
       case 'CUSA & The Sun Belt: A Wild Ride':
         setSelectedConferences(['CUSA', 'Sun Belt']);
         yearMapButtonHandler(1989);
-        setMapDisplay({ teams: false, capitals: true, lines: true, confCountry: true });
+        setMapDisplay({ teams: false, capitals: true, lines: true, confCountry: true, schoolCircles: false });
         setConfCountryOpacity(0.8);
         setConfCountrySize(50);
         setAnimationSpeed(300);
@@ -346,7 +410,7 @@ function App() {
       case 'Big 2 since 32':
         setSelectedConferences(['SEC', 'Big Ten']);
         yearMapButtonHandler(1932);
-        setMapDisplay({ teams: false, capitals: true, lines: true, confCountry: true });
+        setMapDisplay({ teams: false, capitals: true, lines: true, confCountry: true, schoolCircles: false });
         setConfCountryOpacity(0.8);
         setConfCountrySize(100);
         setAnimationSpeed(100);
@@ -357,7 +421,7 @@ function App() {
       case 'Truly Mid-American':
         setSelectedConferences(['MAC']);
         yearMapButtonHandler(1946);
-        setMapDisplay({ teams: true, capitals: false, lines: false, confCountry: true });
+        setMapDisplay({ teams: true, capitals: false, lines: false, confCountry: true, schoolCircles: false });
         setConfCountryOpacity(0.8);
         setConfCountrySize(150);
         setAnimationSpeed(100);
@@ -368,7 +432,7 @@ function App() {
       case 'What is the Big 12?':
         setSelectedConferences(['Big 12']);
         yearMapButtonHandler(1996);
-        setMapDisplay({ teams: true, capitals: true, lines: true, confCountry: true });
+        setMapDisplay({ teams: true, capitals: true, lines: true, confCountry: true, schoolCircles: false });
         setConfCountryOpacity(0.6);
         setConfCountrySize(150);
         setTimeout(() => {
@@ -411,7 +475,6 @@ function App() {
     };
     splitConferenceMonitor()
   }
-
 
   useEffect(() => {
     conferenceFilter()
@@ -469,6 +532,8 @@ function App() {
       case 'confCountry':
         setMapDisplay({ teams: mapDisplay.teams, capitals: mapDisplay.capitals, lines: mapDisplay.lines, confCountry: !mapDisplay.confCountry });
         break;
+      case 'schoolCircles':
+        setMapDisplay({ teams: mapDisplay.teams, capitals: mapDisplay.capitals, lines: mapDisplay.lines, confCountry: mapDisplay.confCountry, schoolCircles: !mapDisplay.schoolCircles });
       default:
         break;
     }
@@ -556,40 +621,15 @@ function App() {
                 </div>
               </div>
               <div className='col-12 col-md-5'>
-                <div className='chart-details-container'>
-                  {selectedConferences.map((conference) => (
-                    chartData[conference] && Number(chartData[conference].labels[0]) <= selectedYear && chartData[conference].labels[chartData[conference].labels.length - 1] >= selectedYear ?
-                    <div className='ind-conf-detail-container' style={{ backgroundColor: `${conferenceColors[conference].light}10`, }}>
-                      <ConferenceDetails
-                        conference={filteredConferenceList.filter((conferenceObject) => conferenceObject.conference == conference)[0]}
-                        confLogos={conferenceLogos}
-                        confColors={conferenceColors}
-                        selectedConference={conference} />
-                      <div className='chart-container'>
-                        <Line data={chartData[conference]} options={chartOptions} />
-                      </div>
-                    </div>
-                    :
-                    <div className='ind-conf-detail-container' style={{ backgroundColor: `${conferenceColors[conference].light}10`, }}>
-                      <ConferenceDetails
-                        conference={filteredConferenceList.filter((conferenceObject) => conferenceObject.conference == conference)[0]}
-                        confLogos={conferenceLogos}
-                        confColors={conferenceColors}
-                        selectedConference={conference} />
-                      <div className='chart-container'>
-                        <p>No Data Available</p>
-                      </div>
-                    </div>
-                  ))}
-                  {/* 
-                <ChartControls
-                  setAnimation={animationHandler}
-                  animate={animate}
-                  firstYear={conferenceYears[0]}
-                  lastYear={conferenceYears[conferenceYears.length - 1]}
-                  setYear={yearMapButtonHandler} />
-                   */}
-                </div>
+                <DetailsSidebar
+                  filteredConferenceList={filteredConferenceList}
+                  conferenceLogos={conferenceLogos}
+                  conferenceColors={conferenceColors}
+                  selectedConferences={selectedConferences}
+                  selectedYear={selectedYear}
+                  yearMapButtonHandler={yearMapButtonHandler}
+                  chartData={chartData}
+                  ncaaConfObject={summaryStatsConfObject} />
               </div>
             </div>
           </div>
@@ -598,6 +638,73 @@ function App() {
     </>
   )
 }
+
+function DetailsSidebar({ filteredConferenceList, conferenceLogos, conferenceColors, selectedConferences, selectedYear, yearMapButtonHandler, chartData, ncaaConfObject }) {
+  const [orderedConferences, setOrderedConferences] = useState([])
+
+  console.log(filteredConferenceList.length)
+
+  useEffect(() => {
+    let currentConferences = filteredConferenceList.map((conference) => conference.conference);
+    let outOfRange = [];
+    let current = [];
+    selectedConferences.forEach((conference) => {
+      currentConferences.includes(conference) ? current.push(conference) : outOfRange.push(conference);
+    });
+    setOrderedConferences([...current, ...outOfRange]);
+  }, [filteredConferenceList, selectedConferences]);
+
+  return (
+    <div className='chart-details-container'>
+      {orderedConferences.map((conference) => {
+        if (!chartData[conference]) {
+          return <p key={conference}>Loading...</p>;
+        }
+        let startYear = Number(chartData[conference].labels[0]);
+        let endYear = Number(chartData[conference].labels[chartData[conference].labels.length - 1]);
+
+        return chartData[conference] && startYear <= selectedYear && endYear >= selectedYear ? (
+          <div className='ind-conf-detail-container' style={{ backgroundColor: `${conferenceColors[conference].light}10`, }}>
+            <ConferenceDetails
+              conference={filteredConferenceList.filter((conferenceObject) => conferenceObject.conference === conference)[0]}
+              confLogos={conferenceLogos}
+              confColors={conferenceColors}
+              selectedConference={conference} />
+            <div className='chart-container'>
+              <Line data={chartData[conference]} options={chartOptions} />
+            </div>
+          </div>
+        ) : (
+          <div className='ind-conf-detail-container' style={{ backgroundColor: `${conferenceColors[conference].light}10`, }}>
+            <ConferenceDetails
+              conference={filteredConferenceList.filter((conferenceObject) => conferenceObject.conference === conference)[0]}
+              confLogos={conferenceLogos}
+              confColors={conferenceColors}
+              selectedConference={conference}
+              selectedYear={selectedYear}
+              startYear={startYear}
+              endYear={endYear}
+              setYear={yearMapButtonHandler} />
+          </div>
+        );
+      })}
+      <div className='ind-conf-detail-container' style={{ backgroundColor: `${conferenceColors["NCAA"].light}10`, }}>
+        <ConferenceDetails
+          conference={ncaaConfObject}
+          confLogos={conferenceLogos}
+          confColors={conferenceColors}
+          selectedConference={"NCAA"}
+          selectedYear={selectedYear}
+          numberOfConf={filteredConferenceList.length}
+        />
+        <div className='chart-container'>
+          <Line data={chartData["NCAA"]} options={chartOptions} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 
 function TeamList({ filteredConferenceList, conferenceLogosObject, schoolIcons }) {
   const [allTeams, setAllTeams] = useState([]);
@@ -645,14 +752,13 @@ function TeamList({ filteredConferenceList, conferenceLogosObject, schoolIcons }
               <tbody>
                 {conference.schools.map((school) => (
                   <>
-                    {selectedTeams.includes(school.name) ? <SchoolDeatails school={school} schoolIcons={schoolIcons} conferenceEra={conference} selectTeamHandler={selectTeamHandler} />
+                    {selectedTeams.includes(school.name) ? <SchoolDetails school={school} schoolIcons={schoolIcons} conferenceEra={conference} selectTeamHandler={selectTeamHandler} />
                       :
                       <button onClick={selectTeamHandler} data-team-name={school.name} className='team-list-table-row-button'>
                         <tr key={school.id} className='team-list-table-row'>
                           <td><img src={schoolIcons[school.name].options.iconUrl} alt={school.name} className='team-list-schoollogo' /></td>
                           <td>{school.name}</td>
                           <td>{school.city}, {school.state}</td>
-                          {console.log(schoolIcons[school.name])}
                         </tr>
                       </button>}
                   </>
@@ -666,7 +772,7 @@ function TeamList({ filteredConferenceList, conferenceLogosObject, schoolIcons }
   )
 }
 
-function SchoolDeatails({ school, schoolIcons, conferenceEra, selectTeamHandler }) {
+function SchoolDetails({ school, schoolIcons, conferenceEra, selectTeamHandler }) {
   let otherSchools = conferenceEra.schools.filter((schoolObject) => schoolObject.name !== school.name);
   let otherSchoolCoord = otherSchools.map((schoolObject) => [schoolObject.latitude, schoolObject.longitude]);
   console.log(otherSchoolCoord.length);
@@ -747,6 +853,10 @@ function MapControls({ setAnimation, animate, firstYear, lastYear, setYear, sele
 
             <button className='btn btn-secondary map-more-control' onClick={(e) => { e.stopPropagation(); setMapDisplayOptions("confCountry"); }}>
               Show "{selectedConferences.length > 1 ? "Conference Countries" : `${selectedConferences[0]} Country`}" {mapDisplayOptions.confCountry ? <span className='option-check'>&#10003;</span> : null}
+            </button>
+
+            <button value="schoolCircles" className='btn btn-secondary map-more-control' onClick={(e) => { e.stopPropagation(); setMapDisplayOptions("schoolCircles"); }}>
+              Show School Circles {mapDisplayOptions.schoolCircles ? <span className='option-check'>&#10003;</span> : null}
             </button>
 
             <button value="both" className='btn btn-secondary map-more-control' onClick={(e) => { e.stopPropagation(); setMapDisplayOptions("lines"); }}>
@@ -887,9 +997,10 @@ function NavBar({ conferenceNames, historicalConferenceNames, selectConference, 
               <li className="nav-item dropdown">
                 <a className="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  QuickSelect Conferences
+                  QuickSelect Options
                 </a>
-                <ul className="dropdown-menu" aria-labelledby="navbarDropdown">
+                <ul className="dropdown-menu quickselect-dropdown" aria-labelledby="navbarDropdown">
+                  <li><h6 className="dropdown-header">Conferences</h6></li>
                   <li key={'Power5'} className='dropdown-item'>
                     <button onClick={selectConference} className='dropdown-item' data-conf-name="Power 5">
                       Power 5
@@ -920,14 +1031,8 @@ function NavBar({ conferenceNames, historicalConferenceNames, selectConference, 
                       NCAA
                     </button>
                   </li>
-                </ul>
-              </li>
-              <li className="nav-item dropdown">
-                <a className="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
-                  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  QuickSelect Animations
-                </a>
-                <ul className="dropdown-menu" aria-labelledby="navbarDropdown">
+                  <li><div className="dropdown-divider"></div></li>
+                  <li><h6 className="dropdown-header">Animations</h6></li>
                   <li key={'AllCFB'} className='dropdown-item'>
                     <button onClick={preprogrammedAnimations} className='dropdown-item' data-anim-name="All of CFB History">
                       All of CFB History
@@ -988,7 +1093,6 @@ function NavBar({ conferenceNames, historicalConferenceNames, selectConference, 
     </>
   )
 }
-
 
 const DraggableTimeline = ({ years, setYear, selectedYear, redraw, setRedraw, setAnimate }) => {
 
@@ -1102,12 +1206,14 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
   const containerRef = useRef(null);
   const [width, setwidth] = useState(window.innerWidth);
   const [schoolCoordinates, setSchoolCoordinates] = useState({});
+  const [confCountryCoords, setConfCountryCoords] = useState({});
   const [schoolToCenterLines, setSchoolToCenterLines] = useState({})
 
   const CircleRadius = confCountrySize * 1609
 
   useEffect(() => {
     let newCoordObject = {};
+    let conferenceCountryCoords = {};
     let newLineObject = {};
     filteredConferenceList.map((conference) => {
       let coords = [];
@@ -1119,9 +1225,11 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
         lineToCenter.push([Number(conference.capital.latitude), Number(conference.capital.longitude)]);
         linesToCenter.push(lineToCenter)
       });
+      conferenceCountryCoords[conference.conference] = calculateConvexHull(coords);
       newCoordObject[conference.conference] = coords;
       newLineObject[conference.conference] = linesToCenter;
     });
+    setConfCountryCoords(conferenceCountryCoords);
     setSchoolCoordinates(newCoordObject);
     setSchoolToCenterLines(newLineObject);
   }, [filteredConferenceList]);
@@ -1218,7 +1326,7 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
               </Marker>
               : null
             }
-            {mapElements.confCountry ?
+            {mapElements.schoolCircles ?
               <Circle
                 center={[Number(school.latitude), Number(school.longitude)]}
                 pathOptions={{ ...mapStyles[conference.conference].circleOptions, fillOpacity: countryOpacity } || standardCircleOptions}
@@ -1249,6 +1357,8 @@ function Map({ filteredConferenceList, conferenceIcons, schoolIcons, selectedCon
         {mapElements.lines && selectedConferences.map((conference) => (
           schoolToCenterLines[conference] && <Polyline pathOptions={mapStyles[conference].lineOptions || standardLineOptions} positions={schoolToCenterLines[conference]} />))}
 
+        {mapElements.confCountry && selectedConferences.map((conference) => (
+          confCountryCoords[conference] && <Polygon pathOptions={{ ...mapStyles[conference].lineOptions, fillOpacity: countryOpacity || standardLineOptions }} positions={confCountryCoords[conference]} />))}
       </MapContainer>
     </div>
   )
@@ -1303,13 +1413,13 @@ const HawaiiMapOverlay = ({ school, schoolIcons, conference, lineOptions, circle
   );
 };
 
-function ConferenceDetails({ conference, confLogos, confColors, selectedConference }) {
+function ConferenceDetails({ conference, confLogos, confColors, selectedConference, selectedYear, startYear, endYear, setYear, numberOfConf }) {
 
   return (conference ?
     <div className='conference-details'>
       <div className='conference-details-main'>
         <h3 className='conference-details-conference'>
-          <span className='conference-details-category-header'>Conference:</span>
+          <span className='conference-details-category-header'>{conference.conference == "NCAA" ? "Summary Stats:" : "Conference:"}</span>
           <img className='conference-details-conference-img' src={confLogos[conference.conference]} />
         </h3>
         <h3 className='conference-details-year'>
@@ -1324,10 +1434,16 @@ function ConferenceDetails({ conference, confLogos, confColors, selectedConferen
       <div className='conference-details-specific'>
         <table className='conference-details-table'>
           <tbody>
-            <tr>
-              <td className='conference-details-category'>Proposed Capital</td>
-              <td className='conference-details-item'>{conference.capital.name}, {conference.capital.state}</td>
-            </tr>
+            {conference.conference !== "NCAA" ?
+              <tr>
+                <td className='conference-details-category'>Proposed Capital</td>
+                <td className='conference-details-item'>{conference.capital.name}, {conference.capital.state}</td>
+              </tr>
+              :
+              <tr>
+                <td className='conference-details-category'>Number of Conferences</td>
+                <td className='conference-details-item'>{numberOfConf}</td>
+              </tr>}
             <tr>
               <td className='conference-details-category'>Number of Schools</td>
               <td className='conference-details-item'>{conference.schools.length}</td>
@@ -1352,7 +1468,37 @@ function ConferenceDetails({ conference, confLogos, confColors, selectedConferen
     </div>
     :
     <div className='conference-details'>
-      <h3>No Data Available</h3>
+      <div className='conference-details-main'>
+        <h3 className='conference-details-conference'>
+          <span className='conference-details-category-header'>Conference:</span>
+          <img className='conference-details-conference-img' src={confLogos[selectedConference]} />
+        </h3>
+        <h3 className='conference-details-year'>
+          <span className='conference-details-category-header'>
+            Year:
+          </span>
+          <span className='conference-details-category-header-year'>
+            {selectedYear}
+          </span>
+        </h3>
+      </div>
+      <div className='chart-container'>
+        {selectedYear < startYear ?
+          <>
+            <button className='out-of-range-button' onClick={() => setYear(startYear)}>
+              <p>Conference does not exist yet.</p>
+              <p>Jump to {startYear}</p>
+            </button>
+          </>
+          :
+          <>
+            <button className='out-of-range-button' onClick={() => setYear(endYear)}>
+              <p>Conference does not exist yet.</p>
+              <p>Jump to {endYear}</p>
+            </button>
+          </>
+        }
+      </div>
     </div>
   )
 };

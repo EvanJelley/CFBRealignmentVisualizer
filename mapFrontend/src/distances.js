@@ -1,4 +1,4 @@
-
+import * as turf from '@turf/turf';
 
 function pointToPointCalc(lat1, lon1, lat2, lon2, type) {
     /**
@@ -46,4 +46,10 @@ function averageDistanceCalc(main, points, type) {
     return distanceCalc(main, points, type) / points.length;
 }
 
-export { pointToPointCalc, distanceCalc, averageDistanceCalc };
+function calculateConvexHull(points) {
+    const pointsFeatureCollection = turf.featureCollection(points.map(point => turf.point(point)));
+    const hull = turf.convex(pointsFeatureCollection);
+    return hull ? hull.geometry.coordinates[0] : [];
+  }
+
+export { pointToPointCalc, distanceCalc, averageDistanceCalc, calculateConvexHull };

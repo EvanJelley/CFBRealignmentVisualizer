@@ -935,43 +935,57 @@ function NavBar({ conferenceNames, historicalConferenceNames, selectConference, 
                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                   Conferences
                 </a>
-                <div className="conf-select-container">
-                  <ul className="dropdown-menu list-inline dropdown-menu-conferences" aria-labelledby="navbarDropdown">
-                    {conferenceNames.map((conferenceName) => (
-                      <li key={conferenceName} className='list-inline-item'>
+                <div className="dropdown-menu" aria-labelledby="navbarDropdown">
+                  <h6 className="dropdown-header">Modern</h6>
+                  <div className="conf-select-container">
+                    <ul className="list-inline dropdown-menu-conferences">
+                      {conferenceNames.map((conferenceName) => (
+                        conferenceName !== 'NCAA' &&
+                        <li key={conferenceName} className='list-inline-item'>
+                          <button
+                            style={{ height: "3.9rem", backgroundColor: selectedConferences.includes(conferenceName) ? "#f1f1f1" : 'white' }}
+                            onClick={(e) => { e.stopPropagation(); selectConference(e) }}
+                            data-conf-name={conferenceName}
+                            className='dropdown-item'>
+                            <img src={conferenceLogosObject[conferenceName]} alt={conferenceName}
+                              className='conference-selection-img' />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <h6 className="dropdown-header">Historic</h6>
+                  <div className="conf-select-container">
+                    <ul className="list-inline dropdown-menu-conferences">
+                      {historicalConferenceNames.map((conferenceName) => (
+                        <li key={conferenceName} className='list-inline-item'>
+                          <button
+                            style={{ height: "3.9rem", backgroundColor: selectedConferences.includes(conferenceName) ? "#f1f1f1" : 'white' }}
+                            onClick={(e) => { e.stopPropagation(); selectConference(e) }}
+                            data-conf-name={conferenceName}
+                            className='dropdown-item'>
+                            <img src={conferenceLogosObject[conferenceName]} alt={conferenceName}
+                              className='conference-selection-img' />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <h6 className="dropdown-header">Select All</h6>
+                  <div className="conf-select-container">
+                    <ul className="list-inline dropdown-menu-conferences">
+                      <li key={'NCAA'} className='list-inline-item'>
                         <button
-                          style={{ height: "3.9rem", backgroundColor: selectedConferences.includes(conferenceName) ? "#f1f1f1" : 'white' }}
+                          style={{ height: "3.9rem", backgroundColor: selectedConferences.includes('NCAA') ? "#f1f1f1" : 'white' }}
                           onClick={(e) => { e.stopPropagation(); selectConference(e) }}
-                          data-conf-name={conferenceName}
+                          data-conf-name='NCAA'
                           className='dropdown-item'>
-                          <img src={conferenceLogosObject[conferenceName]} alt={conferenceName}
+                          <img src={conferenceLogosObject['NCAA']} alt='NCAA'
                             className='conference-selection-img' />
                         </button>
                       </li>
-                    ))}
-                  </ul>
-                </div>
-              </li>
-              <li className="nav-item dropdown">
-                <a className="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
-                  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  Historical Conferences
-                </a>
-                <div className="conf-select-container">
-                  <ul className="dropdown-menu list-inline dropdown-menu-conferences" aria-labelledby="navbarDropdown">
-                    {historicalConferenceNames.map((conferenceName) => (
-                      <li key={conferenceName} className='list-inline-item'>
-                        <button
-                          style={{ height: "3.9rem", backgroundColor: selectedConferences.includes(conferenceName) ? "#f1f1f1" : 'white' }}
-                          onClick={(e) => { e.stopPropagation(); selectConference(e) }}
-                          data-conf-name={conferenceName}
-                          className='dropdown-item'>
-                          <img src={conferenceLogosObject[conferenceName]} alt={conferenceName}
-                            className='conference-selection-img' />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                    </ul>
+                  </div>
                 </div>
               </li>
               <li className="nav-item dropdown">
@@ -997,7 +1011,7 @@ function NavBar({ conferenceNames, historicalConferenceNames, selectConference, 
               <li className="nav-item dropdown">
                 <a className="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  QuickSelect Options
+                  QuickSelect
                 </a>
                 <ul className="dropdown-menu quickselect-dropdown" aria-labelledby="navbarDropdown">
                   <li><h6 className="dropdown-header">Conferences</h6></li>

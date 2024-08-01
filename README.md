@@ -28,8 +28,7 @@ CFB Realignment Visualizer is an interactive web application designed to visuali
 
 - **Data**:
   - Sourced from Wikipedia
-  - JSON format for RESTful API responses
-
+  - JSON format for API responses
 
 ## Setup and Installation
 

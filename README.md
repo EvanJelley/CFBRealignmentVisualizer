@@ -23,12 +23,13 @@ CFB Realignment Visualizer is an interactive web application designed to visuali
 
 - **Backend**:
   - Python
-  - Flask (or Django, specify which one)
-  - Web scraping tools (e.g., BeautifulSoup, Scrapy)
+  - Django
+  - BeautifulSoup
 
 - **Data**:
   - Sourced from Wikipedia
-  - JSON format for API responses
+  - JSON format for RESTful API responses
+
 
 ## Setup and Installation
 
